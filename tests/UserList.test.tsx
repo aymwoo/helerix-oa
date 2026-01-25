@@ -24,7 +24,7 @@ vi.mock('xlsx', () => ({
 }))
 
 // Mock window methods
-global.confirm = vi.fn()
+global.confirm = vi.fn() as any
 global.alert = vi.fn()
 
 // Mock File and FileReader
@@ -34,7 +34,7 @@ global.FileReader = vi.fn().mockImplementation(function () {
     readAsBinaryString: vi.fn(),
     readAsText: vi.fn()
   }
-})
+}) as any
 
 global.File = vi.fn()
 
@@ -269,8 +269,8 @@ describe('UserList', () => {
         }
       }
 
-      read.mockReturnValue(mockWorkbook)
-      utils.sheet_to_json.mockReturnValue([
+      vi.mocked(read).mockReturnValue(mockWorkbook)
+      vi.mocked(utils.sheet_to_json).mockReturnValue([
         ['姓名', '邮箱', '科室', '负责学科', '状态'], // Header row
         ['赵六', 'zhao@example.com', '物理教研组', '物理教研员', '在线'] // Data row
       ])
