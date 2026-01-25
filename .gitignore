@@ -25,4 +25,5 @@ dist-ssr
 .agents/
 .agent/
 .opencode/
+.gemini/
 test_output.txt
