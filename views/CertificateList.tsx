@@ -46,7 +46,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiAttachments, setAiAttachments] = useState<{ type: 'image' | 'pdf'; data: string; name: string }[]>([]);
   const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
-  const [selectedProviderId, setSelectedProviderId] = useState<string>('gemini');
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [aiPreviewData, setAiPreviewData] = useState<Partial<Certificate>[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -74,7 +74,9 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         const savedProviders = localStorage.getItem('helerix_custom_providers');
         if (savedProviders) {
           try {
-            setCustomProviders(JSON.parse(savedProviders));
+            const providers = JSON.parse(savedProviders);
+            setCustomProviders(providers);
+            if (providers.length > 0) setSelectedProviderId(providers[0].id);
           } catch (e) {
             console.error("Failed to load providers", e);
           }
@@ -367,72 +369,45 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     try {
       let responseText = "";
 
-      if (selectedProviderId === 'gemini') {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const parts: any[] = [];
+      const provider = customProviders.find(p => p.id === selectedProviderId);
+      if (!provider) throw new Error("请选择一个有效的 AI 提供商");
 
-        aiAttachments.forEach(att => {
-          parts.push({
-            inlineData: {
-              mimeType: att.type === 'pdf' ? 'application/pdf' : 'image/jpeg',
-              data: att.data
-            }
-          });
-        });
+      let url = provider.baseUrl.replace(/\/$/, "");
+      if (!url.endsWith('/chat/completions')) url = `${url}/chat/completions`;
 
-        parts.push({ text: "请识别并提取图片/文档中的证书信息，严格按照要求的 JSON 格式返回。" });
-
-        const response = await ai.models.generateContent({
-          model: 'gemini-3-pro-preview',
-          contents: [{ role: 'user', parts }],
-          config: {
-            systemInstruction: systemInstruction,
-            temperature: 0.2,
-          }
-        });
-
-        responseText = response.text || "";
-      } else {
-        const provider = customProviders.find(p => p.id === selectedProviderId);
-        if (!provider) throw new Error("未找到所选的 AI 提供商");
-
-        let url = provider.baseUrl.replace(/\/$/, "");
-        if (!url.endsWith('/chat/completions')) url = `${url}/chat/completions`;
-
-        const contentParts: any[] = [];
-        aiAttachments.forEach(att => {
-          if (att.type === 'image') {
-            contentParts.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${att.data}` } });
-          } else {
-            contentParts.push({ type: 'text', text: `[Attached PDF: ${att.name}]` });
-          }
-        });
-        contentParts.push({ type: 'text', text: "请识别并提取图片/文档中的证书信息，严格按照要求的 JSON 格式返回。" });
-
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${provider.apiKey}`
-          },
-          body: JSON.stringify({
-            model: provider.modelId || 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: contentParts }
-            ],
-            temperature: 0.2
-          })
-        });
-
-        if (!res.ok) {
-          const errText = await res.text().catch(() => '');
-          throw new Error(`AI 请求失败: ${res.status} ${errText.slice(0, 100)}`);
+      const contentParts: any[] = [];
+      aiAttachments.forEach(att => {
+        if (att.type === 'image') {
+          contentParts.push({ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${att.data}` } });
+        } else {
+          contentParts.push({ type: 'text', text: `[Attached PDF: ${att.name}]` });
         }
+      });
+      contentParts.push({ type: 'text', text: "请识别并提取图片/文档中的证书信息，严格按照要求的 JSON 格式返回。" });
 
-        const data = await res.json();
-        responseText = data.choices?.[0]?.message?.content || "";
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${provider.apiKey}`
+        },
+        body: JSON.stringify({
+          model: provider.modelId || 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: contentParts }
+          ],
+          temperature: 0.2
+        })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        throw new Error(`AI 请求失败: ${res.status} ${errText.slice(0, 100)}`);
       }
+
+      const data = await res.json();
+      responseText = data.choices?.[0]?.message?.content || "";
 
       // Parse JSON from response
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
@@ -823,7 +798,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                     onChange={(e) => setSelectedProviderId(e.target.value)}
                     className="w-full bg-white border border-border-light rounded-lg px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 mt-1"
                   >
-                    <option value="gemini">Google Gemini</option>
+                    {!customProviders.length && <option value="">无可用模型，请先去系统设置添加</option>}
                     {customProviders.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
