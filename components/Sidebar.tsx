@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser 
 
         <div onClick={() => onNavigate('certificates')} className={getLinkClass('certificates')}>
           <span className="material-symbols-outlined text-xl">workspace_premium</span>
-          专业档案/荣誉
+          证书登记
         </div>
 
         <div onClick={() => onNavigate('ai-exam-analysis')} className={getLinkClass('ai-exam-analysis')}>

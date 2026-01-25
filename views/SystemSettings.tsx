@@ -689,7 +689,7 @@ const SystemSettings: React.FC = () => {
                     onClick={() => setSelectedPromptCategory(cat as PromptCategory)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${selectedPromptCategory === cat ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-text-muted border-border-light hover:bg-gray-50'}`}
                   >
-                    {cat === 'exam' ? '试卷分析' : cat === 'certificate' ? '专业档案识别' : '方案批评者'}
+                    {cat === 'exam' ? '试卷分析' : cat === 'certificate' ? '证书识别' : '方案批评者'}
                   </button>
                 ))}
               </div>
