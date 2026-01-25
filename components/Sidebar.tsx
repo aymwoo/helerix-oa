@@ -15,20 +15,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser 
   const getLinkClass = (view: ViewState) => {
     const isActive = currentView === view;
     return `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group cursor-pointer ${isActive
-        ? "bg-primary/10 text-primary font-medium"
-        : "text-text-muted hover:bg-white hover:text-text-main"
+      ? "bg-primary/10 text-primary font-medium"
+      : "text-text-muted hover:bg-white hover:text-text-main"
       }`;
   };
 
   return (
     <aside className="w-64 flex-col bg-surface-light border-r border-border-light hidden md:flex transition-colors duration-200">
       <div className="h-20 flex items-center px-6 border-b border-border-light">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center w-full">
           <img src={APP_LOGO} alt="Helerix Logo" className="h-10 w-auto object-contain" />
-          <div className="pl-3 border-l border-border-light flex flex-col justify-center h-8">
-            <span className="text-[10px] text-text-muted font-bold tracking-widest uppercase leading-none mb-1">OA System</span>
-            <span className="text-xs text-text-main font-bold leading-none">教研协作</span>
-          </div>
         </div>
       </div>
 

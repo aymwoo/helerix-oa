@@ -9,7 +9,7 @@ export const AVATAR_DAVID = "https://lh3.googleusercontent.com/aida-public/AB6AX
 export const AVATAR_EMILY = "https://lh3.googleusercontent.com/aida-public/AB6AXuDYhZ8lqJ86JWCDvXGBCeVb8--BhIrdRFVKqHW5bKwBEqfNxs6AF0HFzTFJ_FUuXPbQ_k65TXfDqIndWFFxL5sf5QJMwTYytoicFQyL1J00D6hNeiLP6InEQ9S_UWczBiKft-MWl1VOLz2sfOzTVAu3ekkTxaztpnEhCpI4myXaUxJjDJjXtcKT-l8WnCkdnFcsXIOI_lU5-KBxMq2DZ2vq-cphYjjK41msQwBGWTfcPN6EpZKrp7D2zrKgH8AoGgihkWrQm9mvISyk";
 
 // 使用项目根目录下的 logo.png
-export const APP_LOGO = "./logo.png";
+export const APP_LOGO = "/assets/images/logo.png";
 
 export const MOCK_USERS: User[] = [
   {
