@@ -1,0 +1,50 @@
+[
+    {
+        "name": "通义千问 Qwen",
+        "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "apiKey": "sk-your-qwen-api-key",
+        "modelId": "qwen-turbo"
+    },
+    {
+        "name": "字节豆包 Doubao",
+        "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+        "apiKey": "your-doubao-api-key",
+        "modelId": "ep-2025xxxx-xxxxx"
+    },
+    {
+        "name": "DeepSeek",
+        "baseUrl": "https://api.deepseek.com/v1",
+        "apiKey": "sk-your-deepseek-api-key",
+        "modelId": "deepseek-chat"
+    },
+    {
+        "name": "OpenAI GPT-4o",
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "sk-your-openai-api-key",
+        "modelId": "gpt-4o"
+    },
+    {
+        "name": "Ollama 本地",
+        "baseUrl": "http://localhost:11434/v1",
+        "apiKey": "ollama",
+        "modelId": "llama3:latest"
+    },
+    {
+        "name": "智谱 GLM",
+        "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
+        "apiKey": "your-zhipu-api-key",
+        "modelId": "glm-4"
+    },
+    {
+        "name": "百度文心一言",
+        "baseUrl": "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat",
+        "apiKey": "your-baidu-api-key",
+        "modelId": "ernie-bot-4"
+    },
+    {
+        "name": "讯飞星火",
+        "baseUrl": "https://spark-api-open.xf-yun.com/v1",
+        "apiKey": "your-xunfei-api-key",
+        "modelId": "generalv3.5"
+    }
+]

@@ -1,0 +1,7 @@
+{
+  "name": "Helerix OA",
+  "description": "A comprehensive Office Automation dashboard featuring project management, user administration, and AI prompt engineering configurations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
