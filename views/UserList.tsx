@@ -7,10 +7,12 @@ import { read, utils } from 'xlsx';
 
 interface UserListProps {
   onUserSelect: (id: string) => void;
+  currentUser?: User | null;
 }
 
-const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
+const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
   const [users, setUsers] = useState<User[]>([]);
+  const isAdmin = currentUser?.roles.includes(UserRole.Admin);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: keyof User | null; direction: 'asc' | 'desc' }>({
@@ -315,33 +317,36 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
           <h1 className="text-3xl font-bold text-text-main leading-tight">教研员名录</h1>
           <p className="text-text-muted text-sm font-normal">管理跨学科教研专家库，配置任教学科与教研权限。</p>
         </div>
-        <div className="flex gap-3">
-          <button
-            onClick={downloadTemplate}
-            className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
-            title="下载 Excel/CSV 导入模板"
-          >
-            <span className="material-symbols-outlined text-[20px]">download</span>
-            <span className="text-sm font-bold">模板</span>
-          </button>
 
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[20px]">upload_file</span>
-            <span className="text-sm font-bold">批量导入</span>
-          </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" data-testid="file-input" />
+        {isAdmin && (
+          <div className="flex gap-3">
+            <button
+              onClick={downloadTemplate}
+              className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
+              title="下载 Excel/CSV 导入模板"
+            >
+              <span className="material-symbols-outlined text-[20px]">download</span>
+              <span className="text-sm font-bold">模板</span>
+            </button>
 
-          <button
-            onClick={() => { setEditingUserId(null); setIsModalOpen(true); }}
-            className="group flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-violet-600 px-5 py-2.5 text-white shadow-lg shadow-violet-200/50 hover:shadow-violet-300 transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[20px]">person_add</span>
-            <span className="text-sm font-bold tracking-wide">注册新教研员</span>
-          </button>
-        </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[20px]">upload_file</span>
+              <span className="text-sm font-bold">批量导入</span>
+            </button>
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" data-testid="file-input" />
+
+            <button
+              onClick={() => { setEditingUserId(null); setIsModalOpen(true); }}
+              className="group flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-violet-600 px-5 py-2.5 text-white shadow-lg shadow-violet-200/50 hover:shadow-violet-300 transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[20px]">person_add</span>
+              <span className="text-sm font-bold tracking-wide">注册新教研员</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm border border-border-light sm:flex-row sm:items-center">
@@ -370,7 +375,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
             <thead className="border-b border-border-light bg-background-light/50">
               <tr>
                 <th className="px-6 py-4 w-4">
-                  <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={isAllSelected} onChange={toggleSelectAll} />
+                  <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={isAllSelected} onChange={toggleSelectAll} disabled={!isAdmin} />
                 </th>
                 <th className="px-6 py-4 font-semibold text-text-muted">
                   <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => handleSort('name')}>教研员姓名 {getSortIcon('name')}</div>
@@ -378,60 +383,63 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
                 <th className="px-6 py-4 font-semibold text-text-muted">负责学科 (支持兼任)</th>
                 <th className="px-6 py-4 font-semibold text-text-muted">所属科室</th>
                 <th className="px-6 py-4 font-semibold text-text-muted">系统状态</th>
-                <th className="px-6 py-4 font-semibold text-text-muted text-right">管理操作</th>
+                {isAdmin && <th className="px-6 py-4 font-semibold text-text-muted text-right">管理操作</th>}
               </tr>
-             </thead>
-             <tbody className="divide-y divide-border-light">
-               {sortedUsers.length === 0 ? (
-                 <tr>
-                   <td colSpan={6} className="px-6 py-8 text-center text-text-muted">
-                     暂无数据
-                   </td>
-                 </tr>
-               ) : (
-                 sortedUsers.map((user) => (
-                   <tr key={user.id} className={`group transition-colors cursor-pointer ${selectedIds.has(user.id) ? 'bg-primary/5' : 'hover:bg-background-light/50'}`} onClick={() => toggleSelection(user.id)}>
-                     <td className="px-6 py-4"><input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={selectedIds.has(user.id)} readOnly /></td>
-                     <td className="px-6 py-4">
-                       <div className="flex items-center gap-3" onClick={(e) => { e.stopPropagation(); onUserSelect(user.id); }}>
-                         <div className="w-10 h-10 rounded-full bg-cover border-2 border-white shadow-sm ring-1 ring-border-light" style={{ backgroundImage: `url(${user.avatarUrl})` }}></div>
-                         <div>
-                           <p className="font-semibold text-text-main group-hover:text-primary transition-colors flex items-center gap-1">
-                             {user.name}
-                             {user.roles.includes(UserRole.Admin) && <span className="material-symbols-outlined text-[14px] text-primary" title="系统管理员">verified_user</span>}
-                           </p>
-                           <p className="text-xs text-text-muted">{user.email}</p>
-                         </div>
-                       </div>
-                     </td>
-                     <td className="px-6 py-4">
-                       <div className="flex flex-wrap gap-1.5">
-                         {user.roles.map((role, idx) => (
-                           <span key={idx} className={`px-2 py-0.5 text-[10px] font-bold border rounded-md whitespace-nowrap ${getSubjectColor(role)}`}>
-                             {role}
-                           </span>
-                         ))}
-                       </div>
-                     </td>
-                     <td className="px-6 py-4 text-text-main">{user.department}</td>
-                     <td className="px-6 py-4">
-                       <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
+
+            </thead>
+            <tbody className="divide-y divide-border-light">
+              {sortedUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-center text-text-muted">
+                    暂无数据
+                  </td>
+                </tr>
+              ) : (
+                sortedUsers.map((user) => (
+                  <tr key={user.id} className={`group transition-colors cursor-pointer ${selectedIds.has(user.id) ? 'bg-primary/5' : 'hover:bg-background-light/50'}`} onClick={() => toggleSelection(user.id)}>
+                    <td className="px-6 py-4"><input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={selectedIds.has(user.id)} readOnly /></td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3" onClick={(e) => { e.stopPropagation(); onUserSelect(user.id); }}>
+                        <div className="w-10 h-10 rounded-full bg-cover border-2 border-white shadow-sm ring-1 ring-border-light" style={{ backgroundImage: `url(${user.avatarUrl})` }}></div>
+                        <div>
+                          <p className="font-semibold text-text-main group-hover:text-primary transition-colors flex items-center gap-1">
+                            {user.name}
+                            {user.roles.includes(UserRole.Admin) && <span className="material-symbols-outlined text-[14px] text-primary" title="系统管理员">verified_user</span>}
+                          </p>
+                          <p className="text-xs text-text-muted">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1.5">
+                        {user.roles.map((role, idx) => (
+                          <span key={idx} className={`px-2 py-0.5 text-[10px] font-bold border rounded-md whitespace-nowrap ${getSubjectColor(role)}`}>
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-text-main">{user.department}</td>
+                    <td className="px-6 py-4">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
                          ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' :
-                         user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                         <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
-                         {user.status}
-                       </div>
-                     </td>
-                     <td className="px-6 py-4 text-right">
-                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
-                         <button className="p-1.5 rounded-lg text-text-muted hover:bg-primary/10 hover:text-primary transition-colors" onClick={(e) => handleEditClick(e, user)} title="编辑配置"><span className="material-symbols-outlined text-[20px]">edit</span></button>
-                         <button className="p-1.5 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-600 transition-colors" onClick={(e) => handleDelete(e, user.id, user.name)} title="移除"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                       </div>
-                     </td>
-                   </tr>
-                 ))
-               )}
-             </tbody>
+                          user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
+                        {user.status}
+                      </div>
+                    </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+                          <button className="p-1.5 rounded-lg text-text-muted hover:bg-primary/10 hover:text-primary transition-colors" onClick={(e) => handleEditClick(e, user)} title="编辑配置"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                          <button className="p-1.5 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-600 transition-colors" onClick={(e) => handleDelete(e, user.id, user.name)} title="移除"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
           </table>
         </div>
       </div>
@@ -466,8 +474,8 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
                       key={role}
                       onClick={() => handleRoleToggle(role)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] font-bold transition-all text-left ${formData.roles.includes(role)
-                          ? 'bg-primary/10 border-primary text-primary shadow-sm ring-1 ring-primary/20'
-                          : 'bg-white border-border-light text-text-muted hover:border-primary/50'
+                        ? 'bg-primary/10 border-primary text-primary shadow-sm ring-1 ring-primary/20'
+                        : 'bg-white border-border-light text-text-muted hover:border-primary/50'
                         }`}
                     >
                       <span className={`material-symbols-outlined text-[16px] ${formData.roles.includes(role) ? 'text-primary' : 'text-gray-300'}`}>

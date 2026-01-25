@@ -25,3 +25,4 @@ dist-ssr
 .agents/
 .agent/
 .opencode/
+test_output.txt
