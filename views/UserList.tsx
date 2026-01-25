@@ -17,12 +17,12 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
     key: null,
     direction: 'asc',
   });
-  
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [formData, setFormData] = useState<{
     name: string;
     email: string;
@@ -56,14 +56,14 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
   // 为不同学科分配颜色主题
   const getSubjectColor = (role: string) => {
     if (role === UserRole.Admin) return 'bg-violet-100 text-violet-700 border-violet-200';
-    if (role.includes('语文') || role.includes('历史') || role.includes('政治') || role.includes('道德')) 
-        return 'bg-red-50 text-red-700 border-red-200';
-    if (role.includes('数学') || role.includes('物理') || role.includes('化学') || role.includes('生物') || role.includes('信息')) 
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (role.includes('语文') || role.includes('历史') || role.includes('政治') || role.includes('道德'))
+      return 'bg-red-50 text-red-700 border-red-200';
+    if (role.includes('数学') || role.includes('物理') || role.includes('化学') || role.includes('生物') || role.includes('信息'))
+      return 'bg-blue-50 text-blue-700 border-blue-200';
     if (role.includes('英语'))
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      return 'bg-indigo-50 text-indigo-700 border-indigo-200';
     if (role.includes('体育') || role.includes('艺术'))
-        return 'bg-green-50 text-green-700 border-green-200';
+      return 'bg-green-50 text-green-700 border-green-200';
     return 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
@@ -76,7 +76,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string, name: string) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     if (window.confirm(`确定要移除教研员 ${name} 吗？`)) {
       setIsLoading(true);
       try {
@@ -134,15 +134,15 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
       if (editingUserId) {
         const existingUser = users.find(u => u.id === editingUserId);
         if (existingUser) {
-           const updatedUser: User = {
-             ...existingUser,
-             name: formData.name,
-             email: formData.email,
-             roles: formData.roles,
-             department: formData.department,
-             status: formData.status
-           };
-           updatedUsers = await UserDatabase.update(updatedUser);
+          const updatedUser: User = {
+            ...existingUser,
+            name: formData.name,
+            email: formData.email,
+            roles: formData.roles,
+            department: formData.department,
+            status: formData.status
+          };
+          updatedUsers = await UserDatabase.update(updatedUser);
         }
       } else {
         const avatars = [AVATAR_ALICE, AVATAR_MARCUS, AVATAR_SARAH, AVATAR_DAVID, AVATAR_EMILY];
@@ -168,10 +168,10 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
   };
 
   // --- Bulk Import / Export Logic ---
-  
+
   const downloadTemplate = () => {
-    const headers = ['姓名', '邮箱', '科室', '负责学科(用逗号分隔)', '状态(在线/离线/未激活)'];
-    const example = ['张三', 'zhang@edu.com', '数学教研组', '数学教研员,信息技术教研员', '在线'];
+    const headers = ['姓名', '邮箱', '科室', '负责学科(用分号分隔)', '状态(在线/离线/未激活)'];
+    const example = ['张三', 'zhang@edu.com', '数学教研组', '数学教研员;信息技术教研员', '在线'];
     const csvContent = "\uFEFF" + [headers.join(','), example.join(',')].join('\n'); // BOM for Excel
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -198,14 +198,14 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = utils.sheet_to_json(ws, { header: 1 });
-        
+
         // Skip header row
         const rows = data.slice(1) as any[];
         let importedCount = 0;
 
         for (const row of rows) {
           if (!row[0]) continue; // Skip empty rows
-          
+
           const name = row[0];
           const email = row[1];
           const department = row[2];
@@ -215,7 +215,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
           // Parse roles
           const mappedRoles: UserRole[] = [];
           if (rolesStr) {
-            const roleNames = rolesStr.split(/[,，]/).map(s => s.trim());
+            const roleNames = rolesStr.split(/[;；]/).map(s => s.trim());
             Object.values(UserRole).forEach(roleEnum => {
               if (roleNames.includes(roleEnum)) mappedRoles.push(roleEnum);
             });
@@ -238,7 +238,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
             status,
             avatarUrl: randomAvatar
           };
-          
+
           await UserDatabase.add(newUser);
           importedCount++;
         }
@@ -287,7 +287,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
       setSelectedIds(new Set(sortedUsers.map(u => u.id)));
     }
   };
-  
+
   const isAllSelected = sortedUsers.length > 0 && selectedIds.size === sortedUsers.length;
 
   const getSortIcon = (columnKey: keyof User) => {
@@ -300,12 +300,12 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
   };
 
   if (isLoading && users.length === 0) {
-      return (
-          <div className="flex items-center justify-center h-full text-text-muted gap-2">
-              <span className="material-symbols-outlined animate-spin">sync</span>
-              <span>正在载入教研员名录...</span>
-          </div>
-      );
+    return (
+      <div className="flex items-center justify-center h-full text-text-muted gap-2">
+        <span className="material-symbols-outlined animate-spin">sync</span>
+        <span>正在载入教研员名录...</span>
+      </div>
+    );
   }
 
   return (
@@ -316,31 +316,31 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
           <p className="text-text-muted text-sm font-normal">管理跨学科教研专家库，配置任教学科与教研权限。</p>
         </div>
         <div className="flex gap-3">
-            <button 
-                onClick={downloadTemplate}
-                className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
-                title="下载 Excel/CSV 导入模板"
-            >
-                <span className="material-symbols-outlined text-[20px]">download</span>
-                <span className="text-sm font-bold">模板</span>
-            </button>
-            
-            <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
-            >
-                <span className="material-symbols-outlined text-[20px]">upload_file</span>
-                <span className="text-sm font-bold">批量导入</span>
-            </button>
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+          <button
+            onClick={downloadTemplate}
+            className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
+            title="下载 Excel/CSV 导入模板"
+          >
+            <span className="material-symbols-outlined text-[20px]">download</span>
+            <span className="text-sm font-bold">模板</span>
+          </button>
 
-            <button 
-                onClick={() => { setEditingUserId(null); setIsModalOpen(true); }}
-                className="group flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-violet-600 px-5 py-2.5 text-white shadow-lg shadow-violet-200/50 hover:shadow-violet-300 transition-all active:scale-95"
-            >
-                <span className="material-symbols-outlined text-[20px]">person_add</span>
-                <span className="text-sm font-bold tracking-wide">注册新教研员</span>
-            </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="group flex items-center justify-center gap-2 rounded-lg bg-white border border-border-light px-4 py-2.5 text-text-muted hover:bg-gray-50 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">upload_file</span>
+            <span className="text-sm font-bold">批量导入</span>
+          </button>
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+
+          <button
+            onClick={() => { setEditingUserId(null); setIsModalOpen(true); }}
+            className="group flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-violet-600 px-5 py-2.5 text-white shadow-lg shadow-violet-200/50 hover:shadow-violet-300 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">person_add</span>
+            <span className="text-sm font-bold tracking-wide">注册新教研员</span>
+          </button>
         </div>
       </div>
 
@@ -357,9 +357,9 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
         </div>
         <div className="flex items-center gap-2">
           {['文科', '理科', '综合'].map(cat => (
-              <button key={cat} className="px-3 py-1.5 text-xs font-bold border rounded-lg hover:bg-background-light text-text-muted transition-colors">
-                {cat}
-              </button>
+            <button key={cat} className="px-3 py-1.5 text-xs font-bold border rounded-lg hover:bg-background-light text-text-muted transition-colors">
+              {cat}
+            </button>
           ))}
         </div>
       </div>
@@ -370,7 +370,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
             <thead className="border-b border-border-light bg-background-light/50">
               <tr>
                 <th className="px-6 py-4 w-4">
-                    <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={isAllSelected} onChange={toggleSelectAll} />
+                  <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={isAllSelected} onChange={toggleSelectAll} />
                 </th>
                 <th className="px-6 py-4 font-semibold text-text-muted">
                   <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => handleSort('name')}>教研员姓名 {getSortIcon('name')}</div>
@@ -409,8 +409,8 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
                   <td className="px-6 py-4 text-text-main">{user.department}</td>
                   <td className="px-6 py-4">
                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
-                        ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' : 
-                          user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                        ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' :
+                        user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
                       {user.status}
                     </div>
@@ -442,14 +442,14 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">全名 <span className="text-red-500 font-normal">*</span></label>
-                  <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="例如：张老师" />
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="例如：张老师" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">教研邮箱 <span className="text-red-500 font-normal">*</span></label>
-                  <input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="example@edu.com" />
+                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="example@edu.com" />
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <label className="text-sm font-bold text-text-main">负责学科与角色 <span className="text-red-500 font-normal">*</span></label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-2">
@@ -457,11 +457,10 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
                     <button
                       key={role}
                       onClick={() => handleRoleToggle(role)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] font-bold transition-all text-left ${
-                        formData.roles.includes(role)
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[11px] font-bold transition-all text-left ${formData.roles.includes(role)
                           ? 'bg-primary/10 border-primary text-primary shadow-sm ring-1 ring-primary/20'
                           : 'bg-white border-border-light text-text-muted hover:border-primary/50'
-                      }`}
+                        }`}
                     >
                       <span className={`material-symbols-outlined text-[16px] ${formData.roles.includes(role) ? 'text-primary' : 'text-gray-300'}`}>
                         {formData.roles.includes(role) ? 'check_circle' : 'circle'}
@@ -475,11 +474,11 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">所在科室 <span className="text-red-500 font-normal">*</span></label>
-                  <input type="text" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="例如：中学英语组" />
+                  <input type="text" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="例如：中学英语组" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">账户状态</label>
-                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value as UserStatus})} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white">
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as UserStatus })} className="w-full px-4 py-2.5 border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all bg-white">
                     {Object.values(UserStatus).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
@@ -487,8 +486,8 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
             </div>
             <div className="px-6 py-5 border-t bg-background-light/20 flex justify-end gap-3">
               <button onClick={handleCloseModal} className="px-6 py-2.5 border border-border-light rounded-xl text-text-muted hover:bg-white hover:text-text-main text-sm font-bold transition-all">取消</button>
-              <button 
-                onClick={handleSaveUser} 
+              <button
+                onClick={handleSaveUser}
                 disabled={isSaving}
                 className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-70 flex items-center gap-2"
               >

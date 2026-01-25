@@ -32,6 +32,15 @@ const SystemSettings: React.FC = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // --- JSON Format Help State ---
+  const [isJsonHelpOpen, setIsJsonHelpOpen] = useState(false);
+
+  // --- Paste Preview Modal State ---
+  const [isPastePreviewOpen, setIsPastePreviewOpen] = useState(false);
+  const [pastePreviewJson, setPastePreviewJson] = useState<string>('');
+  const [pastePreviewProviders, setPastePreviewProviders] = useState<CustomProvider[]>([]);
+  const [pastePreviewError, setPastePreviewError] = useState<string | null>(null);
+
   // Load custom providers from local storage on mount
   useEffect(() => {
     const saved = localStorage.getItem('helerix_custom_providers');
@@ -133,18 +142,18 @@ const SystemSettings: React.FC = () => {
     reader.readAsText(file);
   };
 
-  const handlePasteProviders = async () => {
-    try {
-      const clipboardText = await navigator.clipboard.readText();
-      if (!clipboardText.trim()) {
-        alert("剪贴板为空，请先复制 JSON 配置。");
-        return;
-      }
+  const parseAndPreview = (jsonText: string) => {
+    setPastePreviewJson(jsonText);
+    setPastePreviewError(null);
+    setPastePreviewProviders([]);
 
-      const json = JSON.parse(clipboardText);
+    if (!jsonText.trim()) return;
+
+    try {
+      const json = JSON.parse(jsonText);
 
       if (!Array.isArray(json)) {
-        alert("导入失败：JSON 根节点必须是数组格式。");
+        setPastePreviewError("JSON 根节点必须是数组格式 (例如: [...] )");
         return;
       }
 
@@ -162,24 +171,58 @@ const SystemSettings: React.FC = () => {
       }
 
       if (validProviders.length === 0) {
-        alert("未找到有效的提供商配置项。请检查 JSON 结构 (需包含 name, baseUrl, apiKey)。");
+        setPastePreviewError("未找到有效的提供商配置项。请检查 JSON 结构 (需包含 name, baseUrl, apiKey)");
         return;
       }
 
-      if (confirm(`从剪贴板解析成功，发现 ${validProviders.length} 个配置项。\n点击确定将其合并到当前列表。`)) {
-        const updated = [...customProviders, ...validProviders];
-        saveCustomProviders(updated);
-        alert("导入完成！");
+      setPastePreviewProviders(validProviders);
+    } catch (e: any) {
+      setPastePreviewError(`JSON 解析错误: ${e.message}`);
+    }
+  };
+
+  const handlePasteProviders = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+
+      // Even if empty or invalid, we show the modal so user can paste/edit manually
+      setIsPastePreviewOpen(true);
+      if (clipboardText.trim()) {
+        parseAndPreview(clipboardText);
+      } else {
+        setPastePreviewJson('');
+        setPastePreviewError(null);
       }
 
     } catch (error: any) {
       console.error(error);
       if (error.name === 'NotAllowedError') {
-        alert("无法访问剪贴板。请确保已授予剪贴板权限，或使用文件上传方式导入。");
+        // Fallback: Just open empty modal
+        setIsPastePreviewOpen(true);
+        setPastePreviewJson('');
+        setPastePreviewError("无法自动读取剪贴板，请手动粘贴内容到下方文本框。");
       } else {
-        alert("剪贴板内容解析错误，请确保复制的是有效的 JSON 格式。");
+        alert(`剪贴板访问失败：${error.message}`);
       }
     }
+  };
+
+  const confirmPasteImport = () => {
+    if (pastePreviewProviders.length === 0) return;
+    const updated = [...customProviders, ...pastePreviewProviders];
+    saveCustomProviders(updated);
+    setIsPastePreviewOpen(false);
+    setPastePreviewJson('');
+    setPastePreviewProviders([]);
+    setPastePreviewError(null);
+    alert(`成功导入 ${pastePreviewProviders.length} 个提供商配置！`);
+  };
+
+  const cancelPasteImport = () => {
+    setIsPastePreviewOpen(false);
+    setPastePreviewJson('');
+    setPastePreviewProviders([]);
+    setPastePreviewError(null);
   };
 
   const handleDeleteCustomProvider = (id: string) => {
@@ -416,6 +459,78 @@ const SystemSettings: React.FC = () => {
                 </div>
               </div>
 
+              {/* JSON Format Help - Collapsible */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setIsJsonHelpOpen(!isJsonHelpOpen)}
+                  className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-primary transition-colors"
+                >
+                  <span className={`material-symbols-outlined text-[16px] transition-transform ${isJsonHelpOpen ? 'rotate-90' : ''}`}>
+                    chevron_right
+                  </span>
+                  <span className="material-symbols-outlined text-[14px]">help</span>
+                  JSON 导入格式说明
+                </button>
+
+                {isJsonHelpOpen && (
+                  <div className="mt-4 p-5 bg-slate-50 border border-slate-200 rounded-xl animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1">
+                        <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-[18px]">code</span>
+                          JSON 格式示例
+                        </h4>
+                        <pre className="bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed">
+                          {`[
+  {
+    "name": "通义千问 Qwen",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "apiKey": "sk-your-api-key",
+    "modelId": "qwen-turbo"
+  },
+  {
+    "name": "DeepSeek",
+    "baseUrl": "https://api.deepseek.com/v1",
+    "apiKey": "sk-xxx",
+    "modelId": "deepseek-chat"
+  }
+]`}
+                        </pre>
+                      </div>
+                      <div className="w-64 shrink-0">
+                        <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-[18px]">list</span>
+                          字段说明
+                        </h4>
+                        <div className="space-y-2 text-xs">
+                          <div className="p-2 bg-white rounded-lg border border-slate-200">
+                            <span className="font-bold text-violet-600">name</span>
+                            <span className="text-red-500 ml-0.5">*</span>
+                            <p className="text-text-muted mt-0.5">提供商显示名称</p>
+                          </div>
+                          <div className="p-2 bg-white rounded-lg border border-slate-200">
+                            <span className="font-bold text-violet-600">baseUrl</span>
+                            <span className="text-red-500 ml-0.5">*</span>
+                            <p className="text-text-muted mt-0.5">API 接口地址</p>
+                          </div>
+                          <div className="p-2 bg-white rounded-lg border border-slate-200">
+                            <span className="font-bold text-violet-600">apiKey</span>
+                            <span className="text-red-500 ml-0.5">*</span>
+                            <p className="text-text-muted mt-0.5">API 密钥</p>
+                          </div>
+                          <div className="p-2 bg-white rounded-lg border border-slate-200">
+                            <span className="font-bold text-violet-600">modelId</span>
+                            <p className="text-text-muted mt-0.5">模型名称（可选）</p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-text-muted mt-3 flex items-center gap-1">
+                          <span className="text-red-500">*</span> 必填字段
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               {isAddingCustom && (
                 <div className="mb-8 p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl animate-in fade-in slide-in-from-top-4">
                   {/* Quick Templates */}
@@ -704,6 +819,117 @@ const SystemSettings: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Paste Preview Modal */}
+      {isPastePreviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-5 border-b flex justify-between items-center bg-gradient-to-r from-slate-50 to-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
+                  <span className="material-symbols-outlined">content_paste</span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-text-main">确认导入配置</h3>
+                  <p className="text-xs text-text-muted">检查以下 JSON 内容，确认后将导入 {pastePreviewProviders.length} 个提供商</p>
+                </div>
+              </div>
+              <button onClick={cancelPasteImport} className="text-text-muted hover:text-text-main p-1">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+              {/* JSON Preview - Editable */}
+              <div className="flex-1 p-5 overflow-auto border-r border-border-light flex flex-col">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-sm font-bold text-text-main flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[18px]">code</span>
+                    JSON 内容 (可编辑)
+                  </h4>
+                  {pastePreviewError ? (
+                    <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">error</span>
+                      格式错误
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[12px]">check</span>
+                      格式正确
+                    </span>
+                  )}
+                </div>
+                <textarea
+                  className={`flex-1 w-full bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono resize-none outline-none border-2 transition-colors leading-relaxed ${pastePreviewError ? 'border-red-500/50' : 'border-transparent focus:border-primary/50'}`}
+                  value={pastePreviewJson}
+                  onChange={(e) => parseAndPreview(e.target.value)}
+                  placeholder="在此处粘贴或输入 JSON 配置..."
+                  spellCheck={false}
+                />
+                {pastePreviewError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-600">
+                    <p className="font-bold flex items-center gap-1 mb-1">
+                      解析失败:
+                    </p>
+                    <p className="font-mono text-[10px] break-all opacity-80">{pastePreviewError}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Parsed Providers */}
+              <div className="w-full md:w-80 p-5 bg-slate-50 overflow-auto flex flex-col">
+                <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2 shrink-0">
+                  <span className="material-symbols-outlined text-green-500 text-[18px]">check_circle</span>
+                  解析结果 ({pastePreviewProviders.length} 个)
+                </h4>
+
+                {pastePreviewProviders.length > 0 ? (
+                  <div className="space-y-3 overflow-y-auto pr-1">
+                    {pastePreviewProviders.map((provider, idx) => (
+                      <div key={idx} className="p-3 bg-white rounded-xl border border-border-light shadow-sm animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${idx * 50}ms` }}>
+                        <h5 className="font-bold text-text-main text-sm truncate">{provider.name}</h5>
+                        <p className="text-[10px] text-text-muted mt-1 truncate font-mono">{provider.baseUrl}</p>
+                        <div className="flex gap-2 mt-2">
+                          <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-bold border border-green-100">
+                            ✓ API Key
+                          </span>
+                          {provider.modelId && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold border border-blue-100 truncate max-w-[100px]">
+                              {provider.modelId}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-50 space-y-2">
+                    <span className="material-symbols-outlined text-4xl">inventory_2</span>
+                    <p className="text-xs text-center">暂无有效配置<br />请检查左侧 JSON</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 py-5 border-t bg-white flex justify-end gap-3">
+              <button
+                onClick={cancelPasteImport}
+                className="px-6 py-2.5 border rounded-xl text-text-muted font-bold text-sm hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmPasteImport}
+                disabled={pastePreviewProviders.length === 0}
+                className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+              >
+                <span className="material-symbols-outlined text-[18px]">check</span>
+                确认导入 {pastePreviewProviders.length > 0 ? `${pastePreviewProviders.length} 个` : ''}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
