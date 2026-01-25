@@ -25,6 +25,8 @@ const AICritic: React.FC = () => {
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
 
   // Prompt State
+  const [prompts, setPrompts] = useState<PromptTemplate[]>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState<string>('');
   const [systemInstruction, setSystemInstruction] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,9 +56,11 @@ const AICritic: React.FC = () => {
 
       // Load Prompts
       await PromptDatabase.initialize();
-      const prompts = await PromptDatabase.getAll('critic');
-      const active = prompts.find(p => p.isDefault) || prompts[0];
+      const loadedPrompts = await PromptDatabase.getAll('critic');
+      setPrompts(loadedPrompts);
+      const active = loadedPrompts.find(p => p.isDefault) || loadedPrompts[0];
       if (active) {
+        setSelectedPromptId(active.id);
         setSystemInstruction(active.content);
       }
 
@@ -192,7 +196,10 @@ const AICritic: React.FC = () => {
       if (!provider) throw new Error("请先选择一个 AI 模型");
 
       let url = provider.baseUrl.replace(/\/$/, "");
-      if (!url.endsWith('/chat/completions')) url = `${url}/chat/completions`;
+      // Only append path if not present. Use regex to be safer about /v1/chat/completions vs /chat/completions
+      if (!/\/chat\/completions$/.test(url)) {
+        url = `${url}/chat/completions`;
+      }
 
       const contentParts: any[] = [];
       if (userMessage.text) contentParts.push({ type: 'text', text: userMessage.text });
@@ -203,6 +210,12 @@ const AICritic: React.FC = () => {
           contentParts.push({ type: 'text', text: `[Attached PDF: ${att.name}]` });
         }
       });
+
+      // Compatibility fix: If no attachments, send as string instead of array
+      // Many models (like Qwen-Turbo) reject array content unless vision-enabled
+      const finalUserContent = (userMessage.attachments && userMessage.attachments.length > 0)
+        ? contentParts
+        : (userMessage.text || "");
 
       const res = await fetch(url, {
         method: 'POST',
@@ -215,7 +228,7 @@ const AICritic: React.FC = () => {
           messages: [
             { role: 'system', content: finalSystemInstruction },
             ...messages.slice(-4).map(m => ({ role: m.role, content: m.text })),
-            { role: 'user', content: contentParts }
+            { role: 'user', content: finalUserContent }
           ],
           stream: true,
           temperature: 0.6
@@ -267,6 +280,14 @@ const AICritic: React.FC = () => {
     }
   };
 
+  const handlePromptChange = (id: string) => {
+    const p = prompts.find(pr => pr.id === id);
+    if (p) {
+      setSelectedPromptId(p.id);
+      setSystemInstruction(p.content);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in duration-500 pb-2 relative">
       {/* Intro Header */}
@@ -306,18 +327,36 @@ const AICritic: React.FC = () => {
               </div>
             </div>
 
-            {/* Provider Selector */}
-            <div className="relative group">
-              <select
-                value={selectedProviderId}
-                onChange={(e) => setSelectedProviderId(e.target.value)}
-                className="appearance-none bg-slate-800 border border-slate-700 text-slate-300 pl-8 pr-8 py-1.5 rounded-lg text-xs font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors"
-              >
-                {!customProviders.length && <option value="">无可用模型</option>}
-                {customProviders.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}          </select>
-              <span className="material-symbols-outlined absolute left-2 top-1.5 text-[16px] text-slate-500">cloud</span>
+            <div className="flex gap-2">
+              {/* Prompt Selector */}
+              <div className="relative group">
+                <select
+                  value={selectedPromptId}
+                  onChange={(e) => handlePromptChange(e.target.value)}
+                  className="appearance-none bg-slate-800 border border-slate-700 text-slate-300 pl-8 pr-6 py-1.5 rounded-lg text-xs font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors w-[130px] truncate"
+                  title="选择批评者人设/提示词"
+                >
+                  {prompts.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute left-2 top-1.5 text-[16px] text-slate-500">psychology</span>
+              </div>
+
+              {/* Provider Selector */}
+              <div className="relative group">
+                <select
+                  value={selectedProviderId}
+                  onChange={(e) => setSelectedProviderId(e.target.value)}
+                  className="appearance-none bg-slate-800 border border-slate-700 text-slate-300 pl-8 pr-6 py-1.5 rounded-lg text-xs font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors w-[130px] truncate"
+                >
+                  {!customProviders.length && <option value="">无可用模型</option>}
+                  {customProviders.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute left-2 top-1.5 text-[16px] text-slate-500">cloud</span>
+              </div>
             </div>
           </div>
         </div>

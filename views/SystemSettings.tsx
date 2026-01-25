@@ -15,6 +15,7 @@ const SystemSettings: React.FC = () => {
   const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
   const [newProvider, setNewProvider] = useState<Omit<CustomProvider, 'id'>>({ name: '', baseUrl: '', apiKey: '', modelId: '' });
   const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
   const [customTestResults, setCustomTestResults] = useState<Record<string, { status: ConnectionStatus, message: string }>>({});
 
   // Import Ref
@@ -53,14 +54,20 @@ const SystemSettings: React.FC = () => {
     }
   }, []);
 
+  const fetchPrompts = async () => {
+    await PromptDatabase.initialize();
+    const data = await PromptDatabase.getAll(selectedPromptCategory);
+    setPrompts(data);
+    return data;
+  };
+
   // Load Prompts when tab or category changes
   useEffect(() => {
     if (activeTab === 'prompt-engineering') {
-      const loadPrompts = async () => {
-        await PromptDatabase.initialize();
-        const data = await PromptDatabase.getAll(selectedPromptCategory);
-        setPrompts(data);
+      fetchPrompts().then((data) => {
         // Default to the currently active one (isDefault) or the latest one
+        // Only if we haven't manually edited content yet? Actually, switching tabs should reset unless we track dirtiness.
+        // For now, let's reset to default on tab switch.
         const defaultP = data.find(p => p.isDefault) || data[0];
         if (defaultP) {
           setCurrentPromptContent(defaultP.content);
@@ -69,8 +76,7 @@ const SystemSettings: React.FC = () => {
           setCurrentPromptContent("");
           setCurrentPromptName("");
         }
-      };
-      loadPrompts();
+      });
     }
   }, [activeTab, selectedPromptCategory]);
 
@@ -84,13 +90,42 @@ const SystemSettings: React.FC = () => {
       alert("请填写必要信息 (名称, Base URL, API Key)");
       return;
     }
-    const provider: CustomProvider = {
-      id: Date.now().toString(),
-      ...newProvider
-    };
-    saveCustomProviders([...customProviders, provider]);
+
+    if (editingProviderId) {
+      // Update existing
+      const updatedProviders = customProviders.map(p =>
+        p.id === editingProviderId ? { ...newProvider, id: editingProviderId } : p
+      );
+      saveCustomProviders(updatedProviders);
+      setEditingProviderId(null);
+    } else {
+      // Add new
+      const provider: CustomProvider = {
+        id: Date.now().toString(),
+        ...newProvider
+      };
+      saveCustomProviders([...customProviders, provider]);
+    }
+
     setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
     setIsAddingCustom(false);
+  };
+
+  const handleEditCustomProvider = (provider: CustomProvider) => {
+    setNewProvider({
+      name: provider.name,
+      baseUrl: provider.baseUrl,
+      apiKey: provider.apiKey,
+      modelId: provider.modelId || ''
+    });
+    setEditingProviderId(provider.id);
+    setIsAddingCustom(true);
+  };
+
+  const cancelAddOrEdit = () => {
+    setIsAddingCustom(false);
+    setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
+    setEditingProviderId(null);
   };
 
   const handleImportProviders = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -349,8 +384,9 @@ const SystemSettings: React.FC = () => {
       category: selectedPromptCategory
     };
 
-    const updated = await PromptDatabase.add(newPrompt);
-    setPrompts(updated);
+    await PromptDatabase.add(newPrompt);
+    // Refresh list to ensure we see all versions
+    fetchPrompts();
     setCurrentPromptName(name);
     alert("提示词版本已保存并设为默认。");
   };
@@ -450,11 +486,11 @@ const SystemSettings: React.FC = () => {
                     粘贴导入
                   </button>
                   <button
-                    onClick={() => setIsAddingCustom(!isAddingCustom)}
+                    onClick={() => isAddingCustom ? cancelAddOrEdit() : setIsAddingCustom(true)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${isAddingCustom ? 'bg-slate-100 text-slate-600' : 'bg-primary text-white border-primary shadow-lg shadow-primary/20 hover:bg-violet-700'}`}
                   >
                     <span className="material-symbols-outlined text-[16px]">{isAddingCustom ? 'close' : 'add'}</span>
-                    {isAddingCustom ? '取消添加' : '添加提供商'}
+                    {isAddingCustom ? '取消' : '添加提供商'}
                   </button>
                 </div>
               </div>
@@ -533,25 +569,32 @@ const SystemSettings: React.FC = () => {
               </div>
               {isAddingCustom && (
                 <div className="mb-8 p-6 bg-slate-50 border border-dashed border-slate-300 rounded-2xl animate-in fade-in slide-in-from-top-4">
-                  {/* Quick Templates */}
-                  <div className="flex flex-wrap gap-2 mb-6 items-center">
-                    <span className="text-[10px] font-black text-text-muted uppercase tracking-widest mr-2 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                      快速模板:
-                    </span>
-                    {[
-                      { name: '通义千问 (Qwen)', config: { name: 'Alibaba Qwen', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelId: 'qwen-turbo' } },
-                      { name: '字节豆包 (Doubao)', config: { name: 'ByteDance Doubao', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', modelId: 'ep-2025xxxx-xxxxx' } },
-                      { name: 'OpenAI 兼容', config: { name: 'Custom Service', baseUrl: 'https://api.openai.com/v1', modelId: 'gpt-4o' } }
-                    ].map((t) => (
-                      <button
-                        key={t.name}
-                        onClick={() => setNewProvider({ ...newProvider, ...t.config })}
-                        className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-all shadow-sm active:scale-95"
-                      >
-                        {t.name}
-                      </button>
-                    ))}
+                  {/* Quick Templates - Only show when adding new */}
+                  {!editingProviderId && (
+                    <div className="flex flex-wrap gap-2 mb-6 items-center">
+                      <span className="text-[10px] font-black text-text-muted uppercase tracking-widest mr-2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                        快速模板:
+                      </span>
+                      {[
+                        { name: '通义千问 (Qwen)', config: { name: 'Alibaba Qwen', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', modelId: 'qwen-turbo' } },
+                        { name: '字节豆包 (Doubao)', config: { name: 'ByteDance Doubao', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', modelId: 'ep-2025xxxx-xxxxx' } },
+                        { name: 'OpenAI 兼容', config: { name: 'Custom Service', baseUrl: 'https://api.openai.com/v1', modelId: 'gpt-4o' } }
+                      ].map((t) => (
+                        <button
+                          key={t.name}
+                          onClick={() => setNewProvider({ ...newProvider, ...t.config })}
+                          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-all shadow-sm active:scale-95"
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2 mb-4 text-sm font-bold text-text-main">
+                    <span className="material-symbols-outlined text-primary">{editingProviderId ? 'edit' : 'add_circle'}</span>
+                    {editingProviderId ? '编辑提供商配置' : '手动输入配置'}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -572,9 +615,14 @@ const SystemSettings: React.FC = () => {
                       <input type="text" value={newProvider.modelId} onChange={e => setNewProvider({ ...newProvider, modelId: e.target.value })} placeholder="例如: gpt-4-turbo, llama3:latest" className="w-full bg-white border border-border-light text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
                     </div>
                   </div>
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-3">
+                    {editingProviderId && (
+                      <button onClick={cancelAddOrEdit} className="px-5 py-2 bg-white border border-border-light text-text-muted rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors">
+                        取消修改
+                      </button>
+                    )}
                     <button onClick={handleAddCustomProvider} className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95">
-                      确认添加
+                      {editingProviderId ? '保存修改' : '确认添加'}
                     </button>
                   </div>
                 </div>
@@ -616,6 +664,7 @@ const SystemSettings: React.FC = () => {
                               </div>
                             )}
                             <button onClick={() => testCustomConnection(provider)} disabled={status === 'testing'} className="p-2 bg-white border border-border-light rounded-xl hover:bg-gray-50 text-text-muted hover:text-primary transition-colors disabled:opacity-50" title="测试连接"><span className={`material-symbols-outlined text-[18px] ${status === 'testing' ? 'animate-spin' : ''}`}>network_check</span></button>
+                            <button onClick={() => handleEditCustomProvider(provider)} className="p-2 bg-white border border-border-light rounded-xl hover:bg-gray-50 text-text-muted hover:text-primary transition-colors" title="编辑配置"><span className="material-symbols-outlined text-[18px]">edit</span></button>
                             <button onClick={() => handleDeleteCustomProvider(provider.id)} className="p-2 bg-white border border-border-light rounded-xl hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors" title="删除配置"><span className="material-symbols-outlined text-[18px]">delete</span></button>
                           </div>
                         </div>
