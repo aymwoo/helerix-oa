@@ -293,7 +293,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
   const getSortIcon = (columnKey: keyof User) => {
     if (sortConfig.key !== columnKey) return <span className="material-symbols-outlined text-[16px] opacity-30">arrow_drop_down</span>;
     return (
-      <span className="material-symbols-outlined text-[16px] text-primary">
+      <span className="material-symbols-outlined text-[16px] text-primary" data-testid="sort-icon">
         {sortConfig.direction === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}
       </span>
     );
@@ -332,7 +332,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
             <span className="material-symbols-outlined text-[20px]">upload_file</span>
             <span className="text-sm font-bold">批量导入</span>
           </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" data-testid="file-input" />
 
           <button
             onClick={() => { setEditingUserId(null); setIsModalOpen(true); }}
@@ -380,50 +380,58 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect }) => {
                 <th className="px-6 py-4 font-semibold text-text-muted">系统状态</th>
                 <th className="px-6 py-4 font-semibold text-text-muted text-right">管理操作</th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-border-light">
-              {sortedUsers.map((user) => (
-                <tr key={user.id} className={`group transition-colors cursor-pointer ${selectedIds.has(user.id) ? 'bg-primary/5' : 'hover:bg-background-light/50'}`} onClick={() => toggleSelection(user.id)}>
-                  <td className="px-6 py-4"><input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={selectedIds.has(user.id)} readOnly /></td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3" onClick={(e) => { e.stopPropagation(); onUserSelect(user.id); }}>
-                      <div className="w-10 h-10 rounded-full bg-cover border-2 border-white shadow-sm ring-1 ring-border-light" style={{ backgroundImage: `url(${user.avatarUrl})` }}></div>
-                      <div>
-                        <p className="font-semibold text-text-main group-hover:text-primary transition-colors flex items-center gap-1">
-                          {user.name}
-                          {user.roles.includes(UserRole.Admin) && <span className="material-symbols-outlined text-[14px] text-primary" title="系统管理员">verified_user</span>}
-                        </p>
-                        <p className="text-xs text-text-muted">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.roles.map((role, idx) => (
-                        <span key={idx} className={`px-2 py-0.5 text-[10px] font-bold border rounded-md whitespace-nowrap ${getSubjectColor(role)}`}>
-                          {role}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-text-main">{user.department}</td>
-                  <td className="px-6 py-4">
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
-                        ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' :
-                        user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
-                      {user.status}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
-                      <button className="p-1.5 rounded-lg text-text-muted hover:bg-primary/10 hover:text-primary transition-colors" onClick={(e) => handleEditClick(e, user)} title="编辑配置"><span className="material-symbols-outlined text-[20px]">edit</span></button>
-                      <button className="p-1.5 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-600 transition-colors" onClick={(e) => handleDelete(e, user.id, user.name)} title="移除"><span className="material-symbols-outlined text-[20px]">delete</span></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+             </thead>
+             <tbody className="divide-y divide-border-light">
+               {sortedUsers.length === 0 ? (
+                 <tr>
+                   <td colSpan={6} className="px-6 py-8 text-center text-text-muted">
+                     暂无数据
+                   </td>
+                 </tr>
+               ) : (
+                 sortedUsers.map((user) => (
+                   <tr key={user.id} className={`group transition-colors cursor-pointer ${selectedIds.has(user.id) ? 'bg-primary/5' : 'hover:bg-background-light/50'}`} onClick={() => toggleSelection(user.id)}>
+                     <td className="px-6 py-4"><input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer rounded" checked={selectedIds.has(user.id)} readOnly /></td>
+                     <td className="px-6 py-4">
+                       <div className="flex items-center gap-3" onClick={(e) => { e.stopPropagation(); onUserSelect(user.id); }}>
+                         <div className="w-10 h-10 rounded-full bg-cover border-2 border-white shadow-sm ring-1 ring-border-light" style={{ backgroundImage: `url(${user.avatarUrl})` }}></div>
+                         <div>
+                           <p className="font-semibold text-text-main group-hover:text-primary transition-colors flex items-center gap-1">
+                             {user.name}
+                             {user.roles.includes(UserRole.Admin) && <span className="material-symbols-outlined text-[14px] text-primary" title="系统管理员">verified_user</span>}
+                           </p>
+                           <p className="text-xs text-text-muted">{user.email}</p>
+                         </div>
+                       </div>
+                     </td>
+                     <td className="px-6 py-4">
+                       <div className="flex flex-wrap gap-1.5">
+                         {user.roles.map((role, idx) => (
+                           <span key={idx} className={`px-2 py-0.5 text-[10px] font-bold border rounded-md whitespace-nowrap ${getSubjectColor(role)}`}>
+                             {role}
+                           </span>
+                         ))}
+                       </div>
+                     </td>
+                     <td className="px-6 py-4 text-text-main">{user.department}</td>
+                     <td className="px-6 py-4">
+                       <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
+                         ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' :
+                         user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                         <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
+                         {user.status}
+                       </div>
+                     </td>
+                     <td className="px-6 py-4 text-right">
+                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+                         <button className="p-1.5 rounded-lg text-text-muted hover:bg-primary/10 hover:text-primary transition-colors" onClick={(e) => handleEditClick(e, user)} title="编辑配置"><span className="material-symbols-outlined text-[20px]">edit</span></button>
+                         <button className="p-1.5 rounded-lg text-text-muted hover:bg-red-50 hover:text-red-600 transition-colors" onClick={(e) => handleDelete(e, user.id, user.name)} title="移除"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                       </div>
+                     </td>
+                   </tr>
+                 ))
+               )}
+             </tbody>
           </table>
         </div>
       </div>

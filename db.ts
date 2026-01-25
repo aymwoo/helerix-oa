@@ -53,7 +53,7 @@ const initializeDB = async () => {
   });
 
   const storedDb = localStorage.getItem(DB_STORAGE_KEY);
-  
+
   if (storedDb) {
     try {
       const data = fromBase64(storedDb);
@@ -196,19 +196,87 @@ const initializeDB = async () => {
   const userCount = dbInstance.exec("SELECT count(*) as count FROM users")[0].values[0][0];
   if (userCount === 0) {
     const adminUser: User = {
-        id: "1",
-        name: "陈老师",
-        email: "chen.teacher@helerix.edu",
-        roles: [UserRole.Admin, UserRole.Math],
-        department: "数字化教研中心",
-        status: UserStatus.Active,
-        avatarUrl: AVATAR_ALEX,
-        bio: "",
-        phone: "+86 188 8888 8888",
-        joinDate: "2022年03月15日",
-        expertise: []
+      id: "1",
+      name: "陈老师",
+      email: "chen.teacher@helerix.edu",
+      roles: [UserRole.Admin, UserRole.Math],
+      department: "数字化教研中心",
+      status: UserStatus.Active,
+      avatarUrl: AVATAR_ALEX,
+      bio: "",
+      phone: "+86 188 8888 8888",
+      joinDate: "2022年03月15日",
+      expertise: []
     };
     dbInstance.run("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [adminUser.id, adminUser.name, adminUser.email, JSON.stringify(adminUser.roles), adminUser.department, adminUser.status, adminUser.avatarUrl, adminUser.bio, adminUser.phone, adminUser.joinDate, JSON.stringify(adminUser.expertise)]);
+  }
+
+  // Initialize Default Prompts
+  const certPromptCount = dbInstance.exec("SELECT count(*) as count FROM prompts WHERE category = 'certificate'")[0]?.values[0][0] || 0;
+  if (certPromptCount === 0) {
+    const defaultCertPrompt: PromptTemplate = {
+      id: "cert_default_v1",
+      name: "标准档案识别预设",
+      content: `你是一个专业的档案归档助手。请分析用户上传的图片（可能是扫描件或照片），提取其中的证书关键信息。
+需要提取的字段包括：
+- name: 证书名称（如“优秀教师荣誉证书”）
+- issuer: 发证单位/机构
+- issueDate: 颁发日期（格式：YYYY-MM-DD，如果只包含年月则补01，如果未明确日期则估算或留空）
+- level: 级别（国家级、省级、市级、区县级、校级、其他）
+- category: 成果类别（荣誉表彰、课题结项、培训结业、职称资格、其他成果）
+- hours: 学时数（仅限培训类，如无则为0）
+
+请以 JSON 数组格式返回提取的信息，例如：
+[{"name": "xxx", "issuer": "xxx", "issueDate": "2024-01-15", "level": "省级", "category": "荣誉表彰", "hours": 0}]
+
+如果图片中包含多个证书，请分别提取每个证书的信息。只返回 JSON 数组，不要添加任何其他说明文字。`,
+      isDefault: true,
+      timestamp: Date.now(),
+      category: "certificate"
+    };
+
+    dbInstance.run(
+      "INSERT INTO prompts (id, name, content, isDefault, timestamp, category) VALUES (?, ?, ?, ?, ?, ?)",
+      [defaultCertPrompt.id, defaultCertPrompt.name, defaultCertPrompt.content, defaultCertPrompt.isDefault ? 1 : 0, defaultCertPrompt.timestamp, defaultCertPrompt.category]
+    );
+  }
+
+  // Initialize Default Exam Prompt
+  const examPromptCount = dbInstance.exec("SELECT count(*) as count FROM prompts WHERE category = 'exam'")[0]?.values[0][0] || 0;
+  if (examPromptCount === 0) {
+    const defaultExamPrompt: PromptTemplate = {
+      id: "exam_default_v1",
+      name: "标准试卷分析预设",
+      content: `你是一个专业的教研员和试卷分析专家。请分析用户上传的试卷图片，提取关键信息并进行深度研判。
+
+请严格按照以下 JSON 格式返回分析结果（不要包含 Markdown 代码块标记）：
+{
+  "title": "试卷标题",
+  "subject": "学科 (如：数学、语文)",
+  "grade": "适用年级",
+  "difficulty": 整数 (1-10，10为最难),
+  "summary": "试卷整体综述与评价",
+  "knowledgePoints": ["考点1", "考点2", ...],
+  "itemAnalysis": [
+    {
+      "question": "题目描述或题号",
+      "point": "考查知识点",
+      "insight": "题目分析与解题思路评价"
+    }
+  ],
+  "teachingAdvice": "针对本试卷的教学或备考建议"
+}
+
+确保返回的是标准 JSON 格式。`,
+      isDefault: true,
+      timestamp: Date.now(),
+      category: "exam"
+    };
+
+    dbInstance.run(
+      "INSERT INTO prompts (id, name, content, isDefault, timestamp, category) VALUES (?, ?, ?, ?, ?, ?)",
+      [defaultExamPrompt.id, defaultExamPrompt.name, defaultExamPrompt.content, defaultExamPrompt.isDefault ? 1 : 0, defaultExamPrompt.timestamp, defaultExamPrompt.category]
+    );
   }
 
   saveDatabase();
@@ -279,7 +347,7 @@ export const UserDatabase = {
   getById: async (id: string): Promise<User | null> => {
     await ensureInitialized();
     const stmt = dbInstance.prepare("SELECT * FROM users WHERE id = :id");
-    const result = stmt.getAsObject({':id': id});
+    const result = stmt.getAsObject({ ':id': id });
     stmt.free();
     if (!result || !result.id) return null;
     try { result.roles = JSON.parse(result.roles as string); } catch { result.roles = []; }
@@ -288,17 +356,26 @@ export const UserDatabase = {
   },
   add: async (user: User): Promise<User[]> => {
     await ensureInitialized();
+
+    // Check if this is the first user
+    const countResult = dbInstance.exec("SELECT count(*) as count FROM users");
+    const count = countResult[0]?.values[0][0] || 0;
+
+    if (count === 0 && !user.roles.includes(UserRole.Admin)) {
+      user.roles = [...user.roles, UserRole.Admin];
+    }
+
     dbInstance.run("INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
-      user.id, 
-      user.name, 
-      user.email, 
-      JSON.stringify(user.roles), 
-      user.department, 
-      user.status, 
-      user.avatarUrl, 
-      user.bio || "", 
-      user.phone || "", 
-      user.joinDate || "", 
+      user.id,
+      user.name,
+      user.email,
+      JSON.stringify(user.roles),
+      user.department,
+      user.status,
+      user.avatarUrl,
+      user.bio || "",
+      user.phone || "",
+      user.joinDate || "",
       JSON.stringify(user.expertise || [])
     ]);
     saveDatabase();
@@ -335,7 +412,7 @@ export const CertificateDatabase = {
   getById: async (id: string): Promise<Certificate | null> => {
     await ensureInitialized();
     const stmt = dbInstance.prepare("SELECT * FROM certificates WHERE id = :id");
-    const result = stmt.getAsObject({':id': id});
+    const result = stmt.getAsObject({ ':id': id });
     stmt.free();
     if (!result || !result.id) return null;
     return result as Certificate;
@@ -420,11 +497,11 @@ export const EventsDatabase = {
     return values.map((row: any[]) => {
       const e: any = {};
       columns.forEach((col: string, index: number) => {
-          if (col === 'participants') {
-              try { e[col] = JSON.parse(row[index]); } catch { e[col] = []; }
-          } else {
-              e[col] = row[index];
-          }
+        if (col === 'participants') {
+          try { e[col] = JSON.parse(row[index]); } catch { e[col] = []; }
+        } else {
+          e[col] = row[index];
+        }
       });
       return e as ScheduleEvent;
     });
@@ -432,14 +509,14 @@ export const EventsDatabase = {
   add: async (event: ScheduleEvent): Promise<ScheduleEvent[]> => {
     await ensureInitialized();
     dbInstance.run("INSERT INTO events VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
-        event.id, 
-        event.title, 
-        event.date, 
-        event.startTime, 
-        event.endTime, 
-        event.type, 
-        event.description || "",
-        JSON.stringify(event.participants || [])
+      event.id,
+      event.title,
+      event.date,
+      event.startTime,
+      event.endTime,
+      event.type,
+      event.description || "",
+      JSON.stringify(event.participants || [])
     ]);
     saveDatabase();
     return EventsDatabase.getAll();
@@ -455,29 +532,29 @@ export const EventsDatabase = {
 export const EventTypeDatabase = {
   initialize: ensureInitialized,
   getAll: async (): Promise<EventTypeTag[]> => {
-      await ensureInitialized();
-      const result = dbInstance.exec("SELECT * FROM event_types");
-      if (result.length === 0) return [];
-      const columns = result[0].columns;
-      const values = result[0].values;
-      return values.map((row: any[]) => {
-          const t: any = {};
-          columns.forEach((col: string, index: number) => { t[col] = row[index]; });
-          return t as EventTypeTag;
-      });
+    await ensureInitialized();
+    const result = dbInstance.exec("SELECT * FROM event_types");
+    if (result.length === 0) return [];
+    const columns = result[0].columns;
+    const values = result[0].values;
+    return values.map((row: any[]) => {
+      const t: any = {};
+      columns.forEach((col: string, index: number) => { t[col] = row[index]; });
+      return t as EventTypeTag;
+    });
   },
   add: async (name: string, colorClass: string): Promise<EventTypeTag[]> => {
-      await ensureInitialized();
-      const id = `et_${Date.now()}`;
-      dbInstance.run("INSERT INTO event_types VALUES (?, ?, ?)", [id, name, colorClass]);
-      saveDatabase();
-      return EventTypeDatabase.getAll();
+    await ensureInitialized();
+    const id = `et_${Date.now()}`;
+    dbInstance.run("INSERT INTO event_types VALUES (?, ?, ?)", [id, name, colorClass]);
+    saveDatabase();
+    return EventTypeDatabase.getAll();
   },
   delete: async (id: string): Promise<EventTypeTag[]> => {
-      await ensureInitialized();
-      dbInstance.run("DELETE FROM event_types WHERE id = ?", [id]);
-      saveDatabase();
-      return EventTypeDatabase.getAll();
+    await ensureInitialized();
+    dbInstance.run("DELETE FROM event_types WHERE id = ?", [id]);
+    saveDatabase();
+    return EventTypeDatabase.getAll();
   }
 };
 
@@ -517,73 +594,73 @@ export const PromptDatabase = {
 };
 
 export const FileManager = {
-    initialize: ensureInitialized,
-    saveFile: async (file: File): Promise<string> => {
-        await ensureInitialized();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                try {
-                    const base64 = (reader.result as string).split(',')[1];
-                    const id = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                    
-                    dbInstance.run(
-                        "INSERT INTO uploads VALUES (?, ?, ?, ?, ?, ?)",
-                        [id, file.name, file.type, base64, file.size, Date.now()]
-                    );
-                    saveDatabase();
-                    resolve(`file://${id}`);
-                } catch (e) {
-                    reject(e);
-                }
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    },
-    getFile: async (uri: string): Promise<StoredFile | null> => {
-        await ensureInitialized();
-        if (!uri.startsWith('file://')) return null;
-        
-        const id = uri.replace('file://', '');
-        const stmt = dbInstance.prepare("SELECT * FROM uploads WHERE id = :id");
-        const result = stmt.getAsObject({':id': id});
-        stmt.free();
-        
-        if (!result || !result.id) return null;
-        return result as StoredFile;
-    },
-    resolveToDataUrl: async (uri: string): Promise<string | null> => {
-        const file = await FileManager.getFile(uri);
-        if (!file) return null;
-        return `data:${file.mimeType};base64,${file.data}`;
-    },
-    deleteFile: async (uri: string) => {
-        await ensureInitialized();
-        if (!uri.startsWith('file://')) return;
-        const id = uri.replace('file://', '');
-        dbInstance.run("DELETE FROM uploads WHERE id = ?", [id]);
-        saveDatabase();
-    }
+  initialize: ensureInitialized,
+  saveFile: async (file: File): Promise<string> => {
+    await ensureInitialized();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          const base64 = (reader.result as string).split(',')[1];
+          const id = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+          dbInstance.run(
+            "INSERT INTO uploads VALUES (?, ?, ?, ?, ?, ?)",
+            [id, file.name, file.type, base64, file.size, Date.now()]
+          );
+          saveDatabase();
+          resolve(`file://${id}`);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
+  getFile: async (uri: string): Promise<StoredFile | null> => {
+    await ensureInitialized();
+    if (!uri.startsWith('file://')) return null;
+
+    const id = uri.replace('file://', '');
+    const stmt = dbInstance.prepare("SELECT * FROM uploads WHERE id = :id");
+    const result = stmt.getAsObject({ ':id': id });
+    stmt.free();
+
+    if (!result || !result.id) return null;
+    return result as StoredFile;
+  },
+  resolveToDataUrl: async (uri: string): Promise<string | null> => {
+    const file = await FileManager.getFile(uri);
+    if (!file) return null;
+    return `data:${file.mimeType};base64,${file.data}`;
+  },
+  deleteFile: async (uri: string) => {
+    await ensureInitialized();
+    if (!uri.startsWith('file://')) return;
+    const id = uri.replace('file://', '');
+    dbInstance.run("DELETE FROM uploads WHERE id = ?", [id]);
+    saveDatabase();
+  }
 };
 
 export const DatabaseManager = {
-    exportDatabase: async (): Promise<Uint8Array | null> => {
-        await ensureInitialized();
-        if (dbInstance) {
-            return dbInstance.export();
-        }
-        return null;
-    },
-    importDatabase: async (data: Uint8Array): Promise<boolean> => {
-        try {
-            await ensureInitialized();
-            dbInstance = new SQL.Database(data);
-            saveDatabase(); 
-            return true;
-        } catch (e) {
-            console.error("Import failed", e);
-            return false;
-        }
+  exportDatabase: async (): Promise<Uint8Array | null> => {
+    await ensureInitialized();
+    if (dbInstance) {
+      return dbInstance.export();
     }
+    return null;
+  },
+  importDatabase: async (data: Uint8Array): Promise<boolean> => {
+    try {
+      await ensureInitialized();
+      dbInstance = new SQL.Database(data);
+      saveDatabase();
+      return true;
+    } catch (e) {
+      console.error("Import failed", e);
+      return false;
+    }
+  }
 };

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import SystemSettings from '../views/SystemSettings'
+import { PromptDatabase } from '../db'
 import { GoogleGenAI } from '@google/genai'
 import * as Diff from 'diff'
 
@@ -11,6 +12,16 @@ vi.mock('@google/genai', () => ({
 
 vi.mock('diff', () => ({
   diffLines: vi.fn()
+}))
+
+vi.mock('../db', () => ({
+  PromptDatabase: {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getAll: vi.fn().mockResolvedValue([]),
+    add: vi.fn().mockResolvedValue([]),
+    delete: vi.fn().mockResolvedValue([])
+  },
+  // Add other databases if used
 }))
 
 // Mock localStorage
@@ -37,8 +48,10 @@ global.fetch = vi.fn()
 describe('SystemSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(PromptDatabase.getAll).mockResolvedValue([])
+    vi.mocked(PromptDatabase.initialize).mockResolvedValue(undefined)
     localStorageMock.getItem.mockReturnValue(null)
-    localStorageMock.setItem.mockImplementation(() => {})
+    localStorageMock.setItem.mockImplementation(() => { })
   })
 
   describe('Rendering', () => {
@@ -174,7 +187,7 @@ describe('SystemSettings', () => {
       localStorageMock.getItem.mockReturnValue('invalid json')
 
       // Mock console.error to avoid noise
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
       render(<SystemSettings />)
       expect(consoleSpy).toHaveBeenCalledWith("Failed to parse custom providers", expect.any(SyntaxError))

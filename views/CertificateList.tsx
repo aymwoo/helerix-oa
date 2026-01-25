@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+
 import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider } from '../types';
 import { CertificateDatabase, PromptDatabase, FileManager } from '../db';
 
@@ -350,21 +350,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     setAiPreviewData([]);
 
     // Get the active prompt for certificate category
-    const activePrompt = prompts.find(p => p.isDefault) || prompts[0];
-    const systemInstruction = activePrompt?.content || `
-你是一个专业的证书信息提取助手。请仔细分析用户上传的证书图片或PDF文档，提取以下信息：
-- name: 证书/成果名称
-- issuer: 颁发/主管单位
-- issueDate: 取得日期（格式：YYYY-MM-DD）
-- level: 荣誉级别（国家级、省级、市级、区县级、校级）
-- category: 成果类别（荣誉表彰、课题结项、培训结业、职称资格、其他成果）
-- hours: 学时数（仅限培训类，如无则为0）
-
-请以 JSON 数组格式返回提取的信息，例如：
-[{"name": "xxx", "issuer": "xxx", "issueDate": "2024-01-15", "level": "省级", "category": "荣誉表彰", "hours": 0}]
-
-如果图片中包含多个证书，请分别提取每个证书的信息。只返回 JSON 数组，不要添加任何其他说明文字。
-`;
+    const systemInstruction = editingPrompt;
 
     try {
       let responseText = "";

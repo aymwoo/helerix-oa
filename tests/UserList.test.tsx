@@ -28,11 +28,13 @@ global.confirm = vi.fn()
 global.alert = vi.fn()
 
 // Mock File and FileReader
-global.FileReader = vi.fn().mockImplementation(() => ({
-  onload: null,
-  readAsBinaryString: vi.fn(),
-  readAsText: vi.fn()
-}))
+global.FileReader = vi.fn().mockImplementation(function () {
+  return {
+    onload: null,
+    readAsBinaryString: vi.fn(),
+    readAsText: vi.fn()
+  }
+})
 
 global.File = vi.fn()
 
@@ -60,18 +62,18 @@ describe('UserList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    UserDatabase.getAll.mockResolvedValue(mockUsers)
-    UserDatabase.initialize.mockResolvedValue(undefined)
+    vi.mocked(UserDatabase.getAll).mockResolvedValue(mockUsers)
+    vi.mocked(UserDatabase.initialize).mockResolvedValue(undefined)
   })
 
   describe('Rendering', () => {
     it('should render without crashing', async () => {
-      render(<UserList onUserSelect={() => {}} />)
-      expect(screen.getByText('教研员名录')).toBeInTheDocument()
+      render(<UserList onUserSelect={() => { }} />)
+      await waitFor(() => expect(screen.getByText('教研员名录')).toBeInTheDocument())
     })
 
     it('should display users list', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => {
         expect(screen.getByText('张三')).toBeInTheDocument()
         expect(screen.getByText('李四')).toBeInTheDocument()
@@ -79,8 +81,8 @@ describe('UserList', () => {
     })
 
     it('should show loading state initially', () => {
-      UserDatabase.getAll.mockImplementation(() => new Promise(() => {})) // Never resolves
-      render(<UserList onUserSelect={() => {}} />)
+      vi.mocked(UserDatabase.getAll).mockImplementation(() => new Promise(() => { })) // Never resolves
+      render(<UserList onUserSelect={() => { }} />)
       expect(screen.getByText('正在载入教研员名录...')).toBeInTheDocument()
     })
   })
@@ -91,12 +93,12 @@ describe('UserList', () => {
       render(<UserList onUserSelect={mockOnSelect} />)
       await waitFor(() => screen.getByText('张三'))
 
-      fireEvent.click(screen.getByText('张三').closest('tr')!)
+      fireEvent.click(screen.getByText('张三').parentElement!)
       expect(mockOnSelect).toHaveBeenCalledWith('1')
     })
 
     it('should handle checkbox selection', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const checkboxes = screen.getAllByRole('checkbox')
@@ -107,7 +109,7 @@ describe('UserList', () => {
     })
 
     it('should select all users when clicking select all', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const selectAllCheckbox = screen.getAllByRole('checkbox')[0]
@@ -122,20 +124,20 @@ describe('UserList', () => {
 
   describe('Sorting', () => {
     it('should sort by name when clicking name header', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const nameHeader = screen.getByText('教研员姓名')
       fireEvent.click(nameHeader)
 
       // Check if sort icon is present
-      expect(screen.getByTestId('arrow_drop_up')).toBeInTheDocument()
+      expect(screen.getByTestId('sort-icon')).toBeInTheDocument()
     })
   })
 
   describe('Adding Users', () => {
     it('should open add user modal', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       fireEvent.click(screen.getByText('注册新教研员'))
@@ -143,9 +145,10 @@ describe('UserList', () => {
     })
 
     it('should add new user', async () => {
-      UserDatabase.add.mockResolvedValue([...mockUsers, { id: '3', name: '王五', email: 'wang@example.com', roles: [UserRole.Math], department: '数学教研组', status: UserStatus.Active, avatarUrl: 'avatar3.png' }])
+      vi.mocked(UserDatabase.add).mockResolvedValue([...mockUsers, { id: '3', name: '王五', email: 'wang@example.com', roles: [UserRole.Math], department: '数学教研组', status: UserStatus.Active, avatarUrl: 'avatar3.png', phone: '', bio: '', joinDate: '', expertise: [] }])
 
-      render(<UserList onUserSelect={() => {}} />)
+
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       fireEvent.click(screen.getByText('注册新教研员'))
@@ -155,7 +158,7 @@ describe('UserList', () => {
       fireEvent.change(screen.getByPlaceholderText('例如：中学英语组'), { target: { value: '数学教研组' } })
 
       // Select role
-      const mathButton = screen.getByText(UserRole.Math)
+      const mathButton = screen.getByRole('button', { name: UserRole.Math })
       fireEvent.click(mathButton)
 
       fireEvent.click(screen.getByText('确认注册'))
@@ -168,7 +171,7 @@ describe('UserList', () => {
 
   describe('Editing Users', () => {
     it('should open edit modal when clicking edit button', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const editButtons = screen.getAllByTitle('编辑配置')
@@ -178,9 +181,9 @@ describe('UserList', () => {
     })
 
     it('should update user', async () => {
-      UserDatabase.update.mockResolvedValue(mockUsers)
+      vi.mocked(UserDatabase.update).mockResolvedValue(mockUsers)
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const editButtons = screen.getAllByTitle('编辑配置')
@@ -198,9 +201,9 @@ describe('UserList', () => {
   describe('Deleting Users', () => {
     it('should delete user after confirmation', async () => {
       global.confirm.mockReturnValue(true)
-      UserDatabase.delete.mockResolvedValue(mockUsers.slice(1))
+      vi.mocked(UserDatabase.delete).mockResolvedValue(mockUsers.slice(1))
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const deleteButtons = screen.getAllByTitle('移除')
@@ -214,7 +217,7 @@ describe('UserList', () => {
     it('should not delete user if not confirmed', async () => {
       global.confirm.mockReturnValue(false)
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const deleteButtons = screen.getAllByTitle('移除')
@@ -226,7 +229,7 @@ describe('UserList', () => {
 
   describe('Bulk Import', () => {
     it('should open file dialog when clicking bulk import', async () => {
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const importButton = screen.getByText('批量导入')
@@ -261,9 +264,9 @@ describe('UserList', () => {
         ['赵六', 'zhao@example.com', '物理教研组', '物理教研员', '在线']
       ])
 
-      UserDatabase.add.mockResolvedValue([])
+      vi.mocked(UserDatabase.add).mockResolvedValue([])
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
       await waitFor(() => screen.getByText('张三'))
 
       const fileInput = screen.getByTestId('file-input')
@@ -283,26 +286,43 @@ describe('UserList', () => {
 
   describe('Template Download', () => {
     it('should download template when clicking template button', () => {
-      const createElementSpy = vi.spyOn(document, 'createElement')
-      const mockAnchor = { href: '', download: '', click: vi.fn() }
-      createElementSpy.mockReturnValue(mockAnchor as any)
+      const originalCreateElement = document.createElement.bind(document)
+      const mockClick = vi.fn()
+      let createdLink: any = null
 
-      render(<UserList onUserSelect={() => {}} />)
+      const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation((tagName: string, options?: any) => {
+        const element = originalCreateElement(tagName, options)
+        if (tagName === 'a') {
+          createdLink = element
+          // Mock click to prevent actual navigation/error and to verify call
+          element.click = mockClick
+        }
+        return element
+      })
 
-      fireEvent.click(screen.getByText('模板'))
+      try {
+        render(<UserList onUserSelect={() => { }} />)
 
-      expect(createElementSpy).toHaveBeenCalledWith('a')
-      expect(mockAnchor.download).toBe('教研员导入模板.csv')
-      expect(mockAnchor.click).toHaveBeenCalled()
+        fireEvent.click(screen.getByText('模板'))
+
+        expect(createElementSpy).toHaveBeenCalledWith('a')
+        expect(createdLink).not.toBeNull()
+        // Check attribute on the real DOM element
+        expect(createdLink.getAttribute('download')).toBe('教研员导入模板.csv')
+        expect(mockClick).toHaveBeenCalled()
+
+      } finally {
+        createElementSpy.mockRestore()
+      }
     })
   })
 
   describe('Edge Cases', () => {
     it('should handle database initialization error', async () => {
-      UserDatabase.initialize.mockRejectedValue(new Error('DB error'))
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      vi.mocked(UserDatabase.initialize).mockRejectedValue(new Error('DB error'))
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith('加载教研员数据失败:', expect.any(Error))
@@ -312,9 +332,9 @@ describe('UserList', () => {
     })
 
     it('should handle empty user list', async () => {
-      UserDatabase.getAll.mockResolvedValue([])
+      vi.mocked(UserDatabase.getAll).mockResolvedValue([])
 
-      render(<UserList onUserSelect={() => {}} />)
+      render(<UserList onUserSelect={() => { }} />)
 
       await waitFor(() => {
         expect(screen.getByText('暂无数据')).toBeInTheDocument() // Assuming there's such text

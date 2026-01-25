@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Type } from "@google/genai";
+
 import { ExamAnalysis, PromptTemplate, CustomProvider } from '../types';
 import { ExamAnalysisDatabase, PromptDatabase } from '../db';
 
@@ -13,11 +13,11 @@ const AIExamAnalysis: React.FC = () => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   // Custom Provider State
   const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
-  const [selectedProviderId, setSelectedProviderId] = useState<string>('gemini');
-  
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Zoom and Pan State
@@ -35,7 +35,7 @@ const AIExamAnalysis: React.FC = () => {
       await PromptDatabase.initialize();
       const pms = await PromptDatabase.getAll("exam");
       setPrompts(pms);
-      
+
       const def = pms.find(p => p.isDefault) || pms[0];
       if (def) {
         setSelectedPromptId(def.id);
@@ -46,7 +46,9 @@ const AIExamAnalysis: React.FC = () => {
       const savedProviders = localStorage.getItem('helerix_custom_providers');
       if (savedProviders) {
         try {
-          setCustomProviders(JSON.parse(savedProviders));
+          const providers = JSON.parse(savedProviders);
+          setCustomProviders(providers);
+          if (providers.length > 0) setSelectedProviderId(providers[0].id);
         } catch (e) {
           console.error("Failed to load providers", e);
         }
@@ -140,104 +142,61 @@ const AIExamAnalysis: React.FC = () => {
       const base64Data = await blobToBase64(file);
       let resultData: any;
 
-      if (selectedProviderId === 'gemini') {
-          // --- Google Gemini Logic ---
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-          const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: {
-              parts: [
-                { inlineData: { mimeType: file.type, data: base64Data } },
-                { text: editingPrompt }
-              ]
-            },
-            config: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  subject: { type: Type.STRING },
-                  grade: { type: Type.STRING },
-                  difficulty: { type: Type.INTEGER },
-                  summary: { type: Type.STRING },
-                  knowledgePoints: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  itemAnalysis: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        question: { type: Type.STRING },
-                        point: { type: Type.STRING },
-                        insight: { type: Type.STRING }
-                      }
-                    }
-                  },
-                  teachingAdvice: { type: Type.STRING }
-                },
-                required: ["title", "subject", "grade", "difficulty", "summary", "knowledgePoints", "itemAnalysis", "teachingAdvice"]
-              }
-            }
-          });
-          resultData = JSON.parse(response.text);
+      // --- Custom OpenAI Compatible Provider Logic ---
+      const provider = customProviders.find(p => p.id === selectedProviderId);
+      if (!provider) throw new Error("请选择一个有效的 AI 模型");
 
-      } else {
-          // --- Custom OpenAI Compatible Provider Logic ---
-          const provider = customProviders.find(p => p.id === selectedProviderId);
-          if (!provider) throw new Error("Provider not found");
-
-          let url = provider.baseUrl.replace(/\/$/, "");
-          if (!url.endsWith('/chat/completions')) {
-             url = `${url}/chat/completions`;
-          }
-
-          // Enforce JSON manually in prompt since response_format is not universally supported
-          const jsonSchemaDesc = JSON.stringify({
-            title: "string",
-            subject: "string",
-            grade: "string",
-            difficulty: "integer (1-10)",
-            summary: "string",
-            knowledgePoints: ["string"],
-            itemAnalysis: [{ question: "string", point: "string", insight: "string" }],
-            teachingAdvice: "string"
-          }, null, 2);
-
-          const systemInstruction = "You are an expert exam analyzer. You MUST output strictly valid JSON matching the schema provided by the user. Do not include markdown formatting (like ```json) in your response.";
-          const fullPrompt = `${editingPrompt}\n\n[IMPORTANT] RETURN ONLY RAW JSON matching this schema:\n${jsonSchemaDesc}`;
-
-          const res = await fetch(url, {
-             method: 'POST',
-             headers: {
-                 'Content-Type': 'application/json',
-                 'Authorization': `Bearer ${provider.apiKey}`
-             },
-             body: JSON.stringify({
-                 model: provider.modelId || 'gpt-4-vision-preview',
-                 messages: [
-                     { role: 'system', content: systemInstruction },
-                     { 
-                         role: 'user', 
-                         content: [
-                             { type: 'text', text: fullPrompt },
-                             { type: 'image_url', image_url: { url: `data:${file.type};base64,${base64Data}` } }
-                         ] 
-                     }
-                 ],
-                 max_tokens: 2000,
-                 temperature: 0.2
-             })
-          });
-
-          if (!res.ok) throw new Error(`Provider API Error: ${res.status}`);
-          const data = await res.json();
-          const content = data.choices?.[0]?.message?.content;
-          if (!content) throw new Error("No content returned from provider");
-          
-          // Cleanup potential markdown fences
-          const cleaned = content.replace(/```json/g, '').replace(/```/g, '').trim();
-          resultData = JSON.parse(cleaned);
+      let url = provider.baseUrl.replace(/\/$/, "");
+      if (!/\/chat\/completions$/.test(url)) {
+        url = `${url}/chat/completions`;
       }
+
+      // Enforce JSON manually in prompt since response_format is not universally supported
+      const jsonSchemaDesc = JSON.stringify({
+        title: "string",
+        subject: "string",
+        grade: "string",
+        difficulty: "integer (1-10)",
+        summary: "string",
+        knowledgePoints: ["string"],
+        itemAnalysis: [{ question: "string", point: "string", insight: "string" }],
+        teachingAdvice: "string"
+      }, null, 2);
+
+      const systemInstruction = "You are an expert exam analyzer. You MUST output strictly valid JSON matching the schema provided by the user. Do not include markdown formatting (like ```json) in your response.";
+      const fullPrompt = `${editingPrompt}\n\n[IMPORTANT] RETURN ONLY RAW JSON matching this schema:\n${jsonSchemaDesc}`;
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${provider.apiKey}`
+        },
+        body: JSON.stringify({
+          model: provider.modelId || 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: fullPrompt },
+                { type: 'image_url', image_url: { url: `data:${file.type};base64,${base64Data}` } }
+              ]
+            }
+          ],
+          max_tokens: 3000,
+          temperature: 0.2
+        })
+      });
+
+      if (!res.ok) throw new Error(`Provider API Error: ${res.status}`);
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) throw new Error("No content returned from provider");
+
+      // Cleanup potential markdown fences
+      const cleaned = content.replace(/```json/g, '').replace(/```/g, '').trim();
+      resultData = JSON.parse(cleaned);
 
       const newAnalysis: ExamAnalysis = {
         id: Date.now().toString(),
@@ -307,31 +266,31 @@ const AIExamAnalysis: React.FC = () => {
           <p className="text-text-muted mt-2">上传、或直接<b>粘贴(Ctrl+V)</b>试卷图片，AI 将自动为您解析考点分布与命题质量。</p>
         </div>
         <div className="flex gap-3 items-center">
-          
+
           {/* Provider Selection */}
           <div className="relative group">
-              <select 
-                  value={selectedProviderId} 
-                  onChange={(e) => setSelectedProviderId(e.target.value)}
-                  className="appearance-none bg-white border border-border-light pl-9 pr-8 py-3 rounded-xl text-sm font-bold text-text-main focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer shadow-sm hover:bg-gray-50 transition-all min-w-[140px]"
-              >
-                  <option value="gemini">Google Gemini (Default)</option>
-                  {customProviders.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-              </select>
-              <span className="material-symbols-outlined absolute left-2.5 top-3.5 text-[18px] text-primary">cloud</span>
-              <span className="material-symbols-outlined absolute right-2 top-3.5 text-[18px] text-text-muted pointer-events-none">arrow_drop_down</span>
+            <select
+              value={selectedProviderId}
+              onChange={(e) => setSelectedProviderId(e.target.value)}
+              className="appearance-none bg-white border border-border-light pl-9 pr-8 py-3 rounded-xl text-sm font-bold text-text-main focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer shadow-sm hover:bg-gray-50 transition-all min-w-[140px]"
+            >
+
+              {customProviders.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute left-2.5 top-3.5 text-[18px] text-primary">cloud</span>
+            <span className="material-symbols-outlined absolute right-2 top-3.5 text-[18px] text-text-muted pointer-events-none">arrow_drop_down</span>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowSettings(!showSettings)}
             className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border shadow-sm active:scale-95 ${showSettings ? 'bg-primary text-white border-primary' : 'bg-white text-text-main border-border-light hover:bg-gray-50'}`}
           >
             <span className="material-symbols-outlined">{showSettings ? 'auto_fix' : 'psychology_alt'}</span>
             分析指令集
           </button>
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
           >
@@ -339,11 +298,11 @@ const AIExamAnalysis: React.FC = () => {
             上传新试卷
           </button>
         </div>
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileUpload} 
-          className="hidden" 
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          className="hidden"
           accept="image/*"
         />
       </div>
@@ -351,52 +310,52 @@ const AIExamAnalysis: React.FC = () => {
       {/* Analysis Settings (Module Independent) */}
       {showSettings && (
         <div className="bg-white rounded-[2rem] border border-border-light shadow-xl overflow-hidden animate-in slide-in-from-top-4 duration-300 p-8 space-y-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-lg font-black text-text-main flex items-center gap-2 mb-1">
-                  <span className="material-symbols-outlined text-primary">auto_fix</span>
-                  试卷分析 Prompt 指令集
-                </h3>
-                <p className="text-xs text-text-muted font-medium">定制 AI 对试卷的研判维度，修改将仅影响“试卷分析”模块。</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>
-                <select 
-                  value={selectedPromptId} 
-                  onChange={(e) => handlePromptChange(e.target.value)}
-                  className="text-xs font-black bg-background-light border border-border-light rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
-                >
-                    {prompts.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}{p.id.length < 10 ? ' (内置)' : ''}</option>
-                    ))}
-                </select>
-              </div>
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-black text-text-main flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-primary">auto_fix</span>
+                试卷分析 Prompt 指令集
+              </h3>
+              <p className="text-xs text-text-muted font-medium">定制 AI 对试卷的研判维度，修改将仅影响“试卷分析”模块。</p>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>
+              <select
+                value={selectedPromptId}
+                onChange={(e) => handlePromptChange(e.target.value)}
+                className="text-xs font-black bg-background-light border border-border-light rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+              >
+                {prompts.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}{p.id.length < 10 ? ' (内置)' : ''}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-            <div className="relative">
-              <textarea 
-                value={editingPrompt}
-                onChange={(e) => setEditingPrompt(e.target.value)}
-                className="w-full h-40 bg-background-light/30 border border-border-light rounded-2xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-primary/20 outline-none resize-none no-scrollbar shadow-inner"
-                placeholder="输入 AI 试卷分析指令..."
-              />
-              <div className="absolute bottom-4 right-4 flex gap-2">
-                  <button 
-                    onClick={saveNewPromptVersion}
-                    className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">save</span>
-                    另存为新版本
-                  </button>
-              </div>
+          <div className="relative">
+            <textarea
+              value={editingPrompt}
+              onChange={(e) => setEditingPrompt(e.target.value)}
+              className="w-full h-40 bg-background-light/30 border border-border-light rounded-2xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-primary/20 outline-none resize-none no-scrollbar shadow-inner"
+              placeholder="输入 AI 试卷分析指令..."
+            />
+            <div className="absolute bottom-4 right-4 flex gap-2">
+              <button
+                onClick={saveNewPromptVersion}
+                className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[16px]">save</span>
+                另存为新版本
+              </button>
             </div>
+          </div>
 
-            <div className="flex items-center gap-4 py-2 border-t border-dashed border-border-light">
-              <div className="flex items-center gap-1.5 text-[10px] text-text-muted italic">
-                  <span className="material-symbols-outlined text-[16px] text-primary">info</span>
-                  当前指令集针对试卷 OCR 及教研研判进行了优化。
-              </div>
+          <div className="flex items-center gap-4 py-2 border-t border-dashed border-border-light">
+            <div className="flex items-center gap-1.5 text-[10px] text-text-muted italic">
+              <span className="material-symbols-outlined text-[16px] text-primary">info</span>
+              当前指令集针对试卷 OCR 及教研研判进行了优化。
             </div>
+          </div>
         </div>
       )}
 
@@ -415,7 +374,7 @@ const AIExamAnalysis: React.FC = () => {
                 <h3 className="text-xl font-bold text-text-main mb-2">AI 正在深度研判...</h3>
                 <p className="text-text-muted animate-pulse">{loadingMessage}</p>
                 {selectedProviderId !== 'gemini' && (
-                  <p className="text-xs text-text-muted mt-2 font-mono bg-gray-100 px-2 py-1 rounded inline-block">Provider: {customProviders.find(p=>p.id===selectedProviderId)?.name}</p>
+                  <p className="text-xs text-text-muted mt-2 font-mono bg-gray-100 px-2 py-1 rounded inline-block">Provider: {customProviders.find(p => p.id === selectedProviderId)?.name}</p>
                 )}
               </div>
             </div>
@@ -430,7 +389,7 @@ const AIExamAnalysis: React.FC = () => {
                     </div>
                     <h2 className="text-2xl font-black text-text-main tracking-tight">{currentResult.title}</h2>
                   </div>
-                  <button 
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     className="flex items-center gap-2 px-4 py-2 bg-white border border-border-light rounded-xl text-sm font-bold text-text-main hover:bg-gray-50 transition-all shadow-sm"
                   >
@@ -438,7 +397,7 @@ const AIExamAnalysis: React.FC = () => {
                     重新上传
                   </button>
                 </div>
-                
+
                 <div className="p-8 space-y-10">
                   {/* Interactive Image Previewer */}
                   {currentResult.imageUrl && (
@@ -454,16 +413,16 @@ const AIExamAnalysis: React.FC = () => {
                             <button onClick={zoomIn} className="p-2 hover:bg-gray-100"><span className="material-symbols-outlined text-[20px]">zoom_in</span></button>
                           </div>
                         </div>
-                        <div 
+                        <div
                           className={`w-full h-full flex items-center justify-center ${scale > 1 ? 'cursor-move' : 'cursor-default'}`}
                           onPointerDown={handlePointerDown}
                           onPointerMove={handlePointerMove}
                           onPointerUp={handlePointerUp}
                           onPointerLeave={handlePointerUp}
                         >
-                          <img 
-                            src={currentResult.imageUrl} 
-                            alt="试卷影像" 
+                          <img
+                            src={currentResult.imageUrl}
+                            alt="试卷影像"
                             className="max-w-full max-h-full transition-transform duration-200 ease-out select-none"
                             style={{ transform: `translate(${position.x}px, ${position.y}px) scale(${scale})` }}
                             draggable={false}
@@ -502,11 +461,11 @@ const AIExamAnalysis: React.FC = () => {
                     <div className="space-y-4">
                       {currentResult.itemAnalysis.map((item, idx) => (
                         <div key={idx} className="p-5 rounded-2xl border border-border-light hover:border-primary/30 transition-colors group">
-                           <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-bold text-text-main group-hover:text-primary transition-colors text-sm">题目描述：{item.question}</h4>
-                              <span className="text-[10px] font-black text-primary/60 uppercase">{item.point}</span>
-                           </div>
-                           <p className="text-xs text-text-muted leading-relaxed">{item.insight}</p>
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-text-main group-hover:text-primary transition-colors text-sm">题目描述：{item.question}</h4>
+                            <span className="text-[10px] font-black text-primary/60 uppercase">{item.point}</span>
+                          </div>
+                          <p className="text-xs text-text-muted leading-relaxed">{item.insight}</p>
                         </div>
                       ))}
                     </div>
@@ -525,7 +484,7 @@ const AIExamAnalysis: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div 
+            <div
               onClick={() => fileInputRef.current?.click()}
               className="bg-white rounded-3xl border-2 border-dashed border-border-light p-20 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group min-h-[500px]"
             >
@@ -534,7 +493,7 @@ const AIExamAnalysis: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-text-main mb-2">开启 AI 教研之旅</h3>
               <p className="text-text-muted max-w-xs mb-8">点击、拖拽或直接<b>粘贴(Ctrl+V)</b>试卷照片，AI 将为您生成深度教研报告。</p>
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
                 className="bg-primary text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-primary/30 hover:bg-violet-700 transition-all flex items-center gap-3 active:scale-95"
               >
@@ -547,57 +506,57 @@ const AIExamAnalysis: React.FC = () => {
 
         {/* Right: History */}
         <div className="lg:col-span-4 space-y-6">
-           <div className="bg-white rounded-3xl border border-border-light shadow-sm p-6">
-              <h3 className="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">history</span>
-                分析历史记录
-              </h3>
-              <div className="space-y-4">
-                {history.length === 0 ? (
-                  <div className="text-center py-10 opacity-30">
-                    <span className="material-symbols-outlined text-4xl mb-2">inbox</span>
-                    <p className="text-xs">暂无历史分析</p>
-                  </div>
-                ) : (
-                  history.map(item => (
-                    <div 
-                      key={item.id} 
-                      onClick={() => setCurrentResult(item)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer group relative ${currentResult?.id === item.id ? 'bg-primary/5 border-primary shadow-sm' : 'border-border-light hover:border-primary/50'}`}
+          <div className="bg-white rounded-3xl border border-border-light shadow-sm p-6">
+            <h3 className="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">history</span>
+              分析历史记录
+            </h3>
+            <div className="space-y-4">
+              {history.length === 0 ? (
+                <div className="text-center py-10 opacity-30">
+                  <span className="material-symbols-outlined text-4xl mb-2">inbox</span>
+                  <p className="text-xs">暂无历史分析</p>
+                </div>
+              ) : (
+                history.map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => setCurrentResult(item)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer group relative ${currentResult?.id === item.id ? 'bg-primary/5 border-primary shadow-sm' : 'border-border-light hover:border-primary/50'}`}
+                  >
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteRecord(item.id); }}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                     >
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); deleteRecord(item.id); }}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <span className="material-symbols-outlined text-sm">delete</span>
-                      </button>
-                      <div className="flex items-start gap-3">
-                         <div className="w-12 h-12 rounded-xl bg-background-light flex-shrink-0 flex items-center justify-center text-text-muted">
-                            <span className="material-symbols-outlined">{item.subject === '数学' ? 'function' : 'text_snippet'}</span>
-                         </div>
-                         <div className="min-w-0">
-                            <h4 className="text-sm font-bold text-text-main truncate group-hover:text-primary transition-colors">{item.title}</h4>
-                            <p className="text-[10px] text-text-muted mt-1 uppercase tracking-tighter">
-                              {new Date(item.timestamp).toLocaleDateString()} · {item.subject}
-                            </p>
-                         </div>
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-background-light flex-shrink-0 flex items-center justify-center text-text-muted">
+                        <span className="material-symbols-outlined">{item.subject === '数学' ? 'function' : 'text_snippet'}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-text-main truncate group-hover:text-primary transition-colors">{item.title}</h4>
+                        <p className="text-[10px] text-text-muted mt-1 uppercase tracking-tighter">
+                          {new Date(item.timestamp).toLocaleDateString()} · {item.subject}
+                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-           </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-           <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-primary rounded-full -mr-12 -mt-12 blur-3xl opacity-30"></div>
-              <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-sm">tips_and_updates</span>
-                教研小贴士
-              </h4>
-              <p className="text-xs text-white/60 leading-relaxed">
-                上传的图片清晰度越高，AI 对复杂数学公式和手写批注的识别准确率就越高。支持直接使用 <b>Ctrl+V</b> 粘贴剪贴板图片。
-              </p>
-           </div>
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary rounded-full -mr-12 -mt-12 blur-3xl opacity-30"></div>
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-sm">tips_and_updates</span>
+              教研小贴士
+            </h4>
+            <p className="text-xs text-white/60 leading-relaxed">
+              上传的图片清晰度越高，AI 对复杂数学公式和手写批注的识别准确率就越高。支持直接使用 <b>Ctrl+V</b> 粘贴剪贴板图片。
+            </p>
+          </div>
         </div>
       </div>
     </div>

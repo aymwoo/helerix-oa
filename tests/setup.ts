@@ -25,7 +25,7 @@ const mockDatabase = {
 }
 
 const mockSQL = {
-    Database: vi.fn(() => mockDatabase),
+    Database: vi.fn(function () { return mockDatabase }),
 }
 
 Object.defineProperty(window, 'initSqlJs', {
