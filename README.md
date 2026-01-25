@@ -4,6 +4,8 @@
 
 # Run and deploy your AI Studio app
 
+[![CI](https://github.com/aymwoo/helerix-oa/actions/workflows/ci.yml/badge.svg)](https://github.com/aymwoo/helerix-oa/actions/workflows/ci.yml)
+
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/drive/12UrkEOfh0irekGXdtXu5JDOpGaq4Bkjy
