@@ -227,7 +227,10 @@ const AICritic: React.FC = () => {
           model: provider.modelId || 'gpt-4o',
           messages: [
             { role: 'system', content: finalSystemInstruction },
-            ...messages.slice(-4).map(m => ({ role: m.role, content: m.text })),
+            ...messages.slice(-4).map(m => ({
+              role: m.role === 'model' ? 'assistant' : m.role,
+              content: m.text
+            })),
             { role: 'user', content: finalUserContent }
           ],
           stream: true,
