@@ -158,7 +158,7 @@ describe('UserList', () => {
       fireEvent.change(screen.getByPlaceholderText('例如：中学英语组'), { target: { value: '数学教研组' } })
 
       // Select role
-      const mathButton = screen.getByRole('button', { name: UserRole.Math })
+      const mathButton = screen.getByRole('button', { name: new RegExp(UserRole.Math) })
       fireEvent.click(mathButton)
 
       fireEvent.click(screen.getByText('确认注册'))
@@ -261,7 +261,8 @@ describe('UserList', () => {
 
       read.mockReturnValue(mockWorkbook)
       utils.sheet_to_json.mockReturnValue([
-        ['赵六', 'zhao@example.com', '物理教研组', '物理教研员', '在线']
+        ['姓名', '邮箱', '科室', '负责学科', '状态'], // Header row
+        ['赵六', 'zhao@example.com', '物理教研组', '物理教研员', '在线'] // Data row
       ])
 
       vi.mocked(UserDatabase.add).mockResolvedValue([])
@@ -273,9 +274,13 @@ describe('UserList', () => {
       const mockFile = new File([''], 'test.xlsx')
       fireEvent.change(fileInput, { target: { files: [mockFile] } })
 
-      // Mock FileReader
-      const mockReader = new global.FileReader()
-      mockReader.onload({ target: { result: 'mock data' } })
+      // Retrieve the FileReader instance created by the component
+      const mockFileReader = (global.FileReader as any).mock.results[0].value
+
+      expect(mockFileReader.readAsBinaryString).toHaveBeenCalledWith(mockFile)
+
+      // Trigger onload manually
+      mockFileReader.onload({ target: { result: 'mock data' } })
 
       await waitFor(() => {
         expect(UserDatabase.add).toHaveBeenCalled()
@@ -285,7 +290,7 @@ describe('UserList', () => {
   })
 
   describe('Template Download', () => {
-    it('should download template when clicking template button', () => {
+    it('should download template when clicking template button', async () => {
       const originalCreateElement = document.createElement.bind(document)
       const mockClick = vi.fn()
       let createdLink: any = null
@@ -302,6 +307,7 @@ describe('UserList', () => {
 
       try {
         render(<UserList onUserSelect={() => { }} />)
+        await waitFor(() => screen.getByText('模板'))
 
         fireEvent.click(screen.getByText('模板'))
 
