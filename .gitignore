@@ -27,3 +27,4 @@ dist-ssr
 .opencode/
 .gemini/
 test_output.txt
+bun.lock
