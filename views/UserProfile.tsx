@@ -60,46 +60,58 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onBack }) => {
         <span className="text-text-main font-medium">个人档案</span>
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl bg-white border border-border-light shadow-sm">
-        <div className="h-32 bg-gradient-to-r from-primary/80 to-secondary/80 w-full"></div>
-        <div className="px-8 pb-8">
-          <div className="relative flex justify-between items-end -mt-12 mb-6">
-            <div className="flex items-end gap-6">
-              <div className="relative">
-                <img src={user.avatarUrl} alt={user.name} className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-white object-cover" />
-                <span className={`absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white 
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-white border border-border-light shadow-xl">
+        <div className="h-56 bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9] w-full relative">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <div className="absolute top-0 right-0 w-full h-full opacity-10">
+            <svg className="w-full h-full" viewBox="0 0 1000 200" preserveAspectRatio="none">
+              <path d="M0,200 C300,100 700,300 1000,200 L1000,0 L0,0 Z" fill="white" />
+            </svg>
+          </div>
+        </div>
+        <div className="px-10 pb-10">
+          <div className="relative flex flex-col md:flex-row justify-between items-end -mt-24 gap-6">
+            <div className="flex items-end gap-8 w-full">
+              <div className="relative shrink-0">
+                <img src={user.avatarUrl} alt={user.name} className="w-36 h-36 rounded-[2.5rem] border-8 border-white shadow-2xl bg-white object-cover" />
+                <span className={`absolute bottom-2 right-2 w-6 h-6 rounded-full border-4 border-white shadow-md
                   ${user.status === UserStatus.Active ? 'bg-green-500' : 
                     user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}>
                 </span>
               </div>
-              <div className="mb-1">
-                <h1 className="text-2xl font-bold text-text-main">{user.name}</h1>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {user.roles.map((role, idx) => (
-                    <span key={idx} className="px-2 py-0.5 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-full">
-                      {role}
-                    </span>
-                  ))}
+              <div className="mb-4 flex-1">
+                <h1 className="text-4xl font-black text-white tracking-tight drop-shadow-lg mb-2">{user.name}</h1>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex flex-wrap gap-1">
+                    {user.roles.map((role, idx) => (
+                      <span key={idx} className="px-2.5 py-0.5 text-[10px] font-bold bg-white/10 text-white/90 border border-white/20 rounded-full backdrop-blur-sm">
+                        {role}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex gap-3 mb-1">
-              <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium text-text-muted hover:bg-background-light transition-colors">
-                <span className="material-symbols-outlined text-[18px]">mail</span>
-                发送邮件
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-violet-700 shadow-md transition-all">
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-                编辑档案
-              </button>
+
+              <div className="flex gap-3 mb-4 self-end">
+                <button className="flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl text-sm font-black hover:bg-white/20 transition-all active:scale-95 shadow-lg">
+                  <span className="material-symbols-outlined text-[20px]">chat</span>
+                  即时研讨
+                </button>
+                <button className="flex items-center gap-2 px-6 py-3 bg-white text-[#6D28D9] rounded-2xl text-sm font-black hover:bg-slate-50 shadow-xl transition-all active:scale-95">
+                  <span className="material-symbols-outlined text-[20px]">person_add</span>
+                  协同开发
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 py-6 border-t">
-             <div className="p-4 rounded-xl bg-background-light/50 border">
-                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">任职科室</p>
-                <p className="text-lg font-bold text-text-main">{user.department}</p>
-             </div>
+             {user.department && user.department !== '未分配' && (
+               <div className="p-4 rounded-xl bg-background-light/50 border">
+                  <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">任职科室</p>
+                  <p className="text-lg font-bold text-text-main">{user.department}</p>
+               </div>
+             )}
              <div className="p-4 rounded-xl bg-background-light/50 border">
                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">教研邮箱</p>
                 <p className="text-lg font-bold text-text-main truncate" title={user.email}>{user.email}</p>

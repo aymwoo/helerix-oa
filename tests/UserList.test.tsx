@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import UserList from '../views/UserList'
 import { UserRole, UserStatus } from '../types'
+import { ToastProvider } from '../components/ToastContext'
 import { UserDatabase } from '../db'
 import { read, utils } from 'xlsx'
 
@@ -78,12 +79,12 @@ describe('UserList', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => expect(screen.getByText('教研员名录')).toBeInTheDocument())
     })
 
     it('should display users list', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => {
         expect(screen.getByText('张三')).toBeInTheDocument()
         expect(screen.getByText('李四')).toBeInTheDocument()
@@ -92,7 +93,7 @@ describe('UserList', () => {
 
     it('should show loading state initially', () => {
       vi.mocked(UserDatabase.getAll).mockImplementation(() => new Promise(() => { })) // Never resolves
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       expect(screen.getByText('正在载入教研员名录...')).toBeInTheDocument()
     })
   })
@@ -100,7 +101,7 @@ describe('UserList', () => {
   describe('User Selection', () => {
     it('should call onUserSelect when clicking user row', async () => {
       const mockOnSelect = vi.fn()
-      render(<UserList onUserSelect={mockOnSelect} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={mockOnSelect} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       fireEvent.click(screen.getByText('张三').parentElement!)
@@ -108,7 +109,7 @@ describe('UserList', () => {
     })
 
     it('should handle checkbox selection', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const checkboxes = screen.getAllByRole('checkbox')
@@ -119,7 +120,7 @@ describe('UserList', () => {
     })
 
     it('should select all users when clicking select all', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const selectAllCheckbox = screen.getAllByRole('checkbox')[0]
@@ -134,7 +135,7 @@ describe('UserList', () => {
 
   describe('Sorting', () => {
     it('should sort by name when clicking name header', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const nameHeader = screen.getByText('教研员姓名')
@@ -147,7 +148,7 @@ describe('UserList', () => {
 
   describe('Adding Users', () => {
     it('should open add user modal', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       fireEvent.click(screen.getByText('注册新教研员'))
@@ -158,7 +159,7 @@ describe('UserList', () => {
       vi.mocked(UserDatabase.add).mockResolvedValue([...mockUsers, { id: '3', name: '王五', email: 'wang@example.com', roles: [UserRole.Math], department: '数学教研组', status: UserStatus.Active, avatarUrl: 'avatar3.png', phone: '', bio: '', joinDate: '', expertise: [] }])
 
 
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       fireEvent.click(screen.getByText('注册新教研员'))
@@ -181,7 +182,7 @@ describe('UserList', () => {
 
   describe('Editing Users', () => {
     it('should open edit modal when clicking edit button', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const editButtons = screen.getAllByTitle('编辑配置')
@@ -193,7 +194,7 @@ describe('UserList', () => {
     it('should update user', async () => {
       vi.mocked(UserDatabase.update).mockResolvedValue(mockUsers)
 
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const editButtons = screen.getAllByTitle('编辑配置')
@@ -213,7 +214,7 @@ describe('UserList', () => {
       global.confirm.mockReturnValue(true)
       vi.mocked(UserDatabase.delete).mockResolvedValue(mockUsers.slice(1))
 
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const deleteButtons = screen.getAllByTitle('移除')
@@ -227,7 +228,7 @@ describe('UserList', () => {
     it('should not delete user if not confirmed', async () => {
       global.confirm.mockReturnValue(false)
 
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const deleteButtons = screen.getAllByTitle('移除')
@@ -239,7 +240,7 @@ describe('UserList', () => {
 
   describe('Bulk Import', () => {
     it('should open file dialog when clicking bulk import', async () => {
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const importButton = screen.getByText('批量导入')
@@ -277,7 +278,7 @@ describe('UserList', () => {
 
       vi.mocked(UserDatabase.add).mockResolvedValue([])
 
-      render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
 
       const fileInput = screen.getByTestId('file-input')
@@ -316,7 +317,7 @@ describe('UserList', () => {
       })
 
       try {
-        render(<UserList onUserSelect={() => { }} currentUser={mockAdminUser} />)
+        render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
         await waitFor(() => screen.getByText('模板'))
 
         fireEvent.click(screen.getByText('模板'))
@@ -338,7 +339,7 @@ describe('UserList', () => {
       vi.mocked(UserDatabase.initialize).mockRejectedValue(new Error('DB error'))
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
-      render(<UserList onUserSelect={() => { }} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} /></ToastProvider>)
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith('加载教研员数据失败:', expect.any(Error))
@@ -350,7 +351,7 @@ describe('UserList', () => {
     it('should handle empty user list', async () => {
       vi.mocked(UserDatabase.getAll).mockResolvedValue([])
 
-      render(<UserList onUserSelect={() => { }} />)
+      render(<ToastProvider><UserList onUserSelect={() => { }} /></ToastProvider>)
 
       await waitFor(() => {
         expect(screen.getByText('暂无数据')).toBeInTheDocument() // Assuming there's such text
@@ -359,7 +360,7 @@ describe('UserList', () => {
     describe('Non-Admin View', () => {
       it('should hide admin features for non-admin user', async () => {
         const nonAdminUser = { ...mockAdminUser, roles: [UserRole.Math], id: 'user2' }
-        render(<UserList onUserSelect={() => { }} currentUser={nonAdminUser} />)
+        render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={nonAdminUser} /></ToastProvider>)
         await waitFor(() => screen.getByText('张三'))
 
         // Should not see admin buttons

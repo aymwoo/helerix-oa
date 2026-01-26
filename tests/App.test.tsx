@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import App from '../App'
+import { ToastProvider } from '../components/ToastContext'
 import { UserRole, UserStatus, User } from '../types'
 
 // Mock all view components
@@ -77,7 +78,7 @@ describe('App Component', () => {
     })
 
     it('should show login page when not authenticated', async () => {
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('login-view')).toBeInTheDocument()
@@ -85,7 +86,7 @@ describe('App Component', () => {
     })
 
     it('should show main app after login', async () => {
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('login-view')).toBeInTheDocument()
@@ -100,7 +101,7 @@ describe('App Component', () => {
     })
 
     it('should persist login in localStorage', async () => {
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             fireEvent.click(screen.getByText('Login as Admin'))
@@ -113,7 +114,7 @@ describe('App Component', () => {
         vi.mocked(localStorage.getItem).mockReturnValue('admin-1')
         vi.mocked(UserDatabase.getById).mockResolvedValue(mockAdminUser)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('sidebar')).toBeInTheDocument()
@@ -125,7 +126,7 @@ describe('App Component', () => {
         vi.mocked(localStorage.getItem).mockReturnValue('admin-1')
         vi.mocked(UserDatabase.getById).mockResolvedValue(mockAdminUser)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('sidebar')).toBeInTheDocument()
@@ -143,7 +144,7 @@ describe('App Component', () => {
         vi.mocked(localStorage.getItem).mockReturnValue('admin-1')
         vi.mocked(UserDatabase.getById).mockResolvedValue(mockAdminUser)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('schedule-view')).toBeInTheDocument()
@@ -157,12 +158,10 @@ describe('App Component', () => {
     })
 
     it('should block non-admin from system settings', async () => {
-        window.alert = vi.fn()
-        
         vi.mocked(localStorage.getItem).mockReturnValue('user-1')
         vi.mocked(UserDatabase.getById).mockResolvedValue(mockRegularUser)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('sidebar')).toBeInTheDocument()
@@ -170,14 +169,16 @@ describe('App Component', () => {
         
         fireEvent.click(screen.getByText('Settings'))
         
-        expect(window.alert).toHaveBeenCalledWith('权限不足：系统设置仅对管理员开放')
+        await waitFor(() => {
+            expect(screen.getByText('权限不足：系统设置仅对管理员开放')).toBeInTheDocument()
+        })
     })
 
     it('should allow admin to access system settings', async () => {
         vi.mocked(localStorage.getItem).mockReturnValue('admin-1')
         vi.mocked(UserDatabase.getById).mockResolvedValue(mockAdminUser)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('sidebar')).toBeInTheDocument()
@@ -194,7 +195,7 @@ describe('App Component', () => {
         vi.mocked(localStorage.getItem).mockReturnValue('deleted-user')
         vi.mocked(UserDatabase.getById).mockResolvedValue(null)
         
-        render(<App />)
+        render(<ToastProvider><App /></ToastProvider>)
         
         await waitFor(() => {
             expect(screen.getByTestId('login-view')).toBeInTheDocument()

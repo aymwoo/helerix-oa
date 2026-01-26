@@ -20,6 +20,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [selectedQuickUser, setSelectedQuickUser] = useState<User | null>(null);
   const [quickPassword, setQuickPassword] = useState('');
+  const [recentLoginIds, setRecentLoginIds] = useState<string[]>([]);
+  
+  const RECENT_LOGINS_KEY = 'helerix_recent_logins';
 
   // Registration form state
   const [regName, setRegName] = useState('');
@@ -35,6 +38,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       await UserDatabase.initialize();
       const allUsers = await UserDatabase.getAll();
       setUsers(allUsers);
+      
+      const recentStr = localStorage.getItem(RECENT_LOGINS_KEY);
+      if (recentStr) {
+        setRecentLoginIds(JSON.parse(recentStr));
+      }
+      
       // If no users exist, switch to registration mode
       if (allUsers.length === 0) {
         setAuthMode('register');
@@ -50,6 +59,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     loadUsers();
   }, []);
 
+  const addToRecentLogins = (userId: string) => {
+    const currentRecent = [...recentLoginIds];
+    const filtered = currentRecent.filter(id => id !== userId);
+    const updated = [userId, ...filtered].slice(0, 5); // Keep last 5
+    setRecentLoginIds(updated);
+    localStorage.setItem(RECENT_LOGINS_KEY, JSON.stringify(updated));
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    addToRecentLogins(user.id);
+    onLogin(user);
+  };
+
   const handleQuickLogin = (user: User) => {
     setError(null);
     setQuickPassword('');
@@ -61,7 +83,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     if (!selectedQuickUser) return;
 
     if (selectedQuickUser.password === quickPassword) {
-      onLogin(selectedQuickUser);
+      handleLoginSuccess(selectedQuickUser);
     } else {
       setError("密码错误");
     }
@@ -79,7 +101,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     
     if (user) {
       if (user.password === password) {
-        onLogin(user);
+        handleLoginSuccess(user);
       } else {
         setError("密码不正确");
       }
@@ -142,7 +164,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const registeredUser = updatedUsers.find(u => u.email === newUser.email);
       
       if (registeredUser) {
-        onLogin(registeredUser);
+        handleLoginSuccess(registeredUser);
       }
     } catch (err) {
       console.error("Registration failed", err);
@@ -216,9 +238,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     </div>
                   ) : (
                     <>
-                      <p className="text-xs text-white/40 uppercase tracking-wider font-bold mb-3">选择账户登录</p>
+                      <p className="text-xs text-white/40 uppercase tracking-wider font-bold mb-3">最近登录</p>
                       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-                        {users.map((user, index) => (
+                        {users
+                          .filter(u => recentLoginIds.includes(u.id))
+                          .sort((a, b) => recentLoginIds.indexOf(a.id) - recentLoginIds.indexOf(b.id))
+                          .map((user, index) => (
                           <button
                             key={user.id}
                             onClick={() => handleQuickLogin(user)}
@@ -242,6 +267,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             <span className="material-symbols-outlined text-white/20 group-hover:text-primary transition-colors">arrow_forward</span>
                           </button>
                         ))}
+                        {recentLoginIds.length === 0 && (
+                          <div className="py-8 text-center bg-white/5 rounded-2xl border border-white/5">
+                            <span className="material-symbols-outlined text-white/10 text-4xl mb-2">history</span>
+                            <p className="text-white/30 text-xs">暂无最近登录记录</p>
+                            <button 
+                              onClick={() => setIsQuickLogin(false)}
+                              className="mt-4 text-primary text-xs font-bold hover:underline"
+                            >
+                              切换到账号登录
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

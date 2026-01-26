@@ -240,91 +240,102 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser, onUserUpdate }) => {
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 overflow-visible">
       {/* Hero Header Card */}
       <div className="relative bg-white rounded-[3rem] border border-[#E5E7EB] shadow-2xl shadow-primary/5 overflow-hidden">
-        <div className="h-64 bg-slate-950 relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/20 via-slate-900 to-slate-950"></div>
-          <div className="absolute top-0 right-0 w-full h-full opacity-10">
-            <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" fillOpacity="0.1" />
+        <div className="h-80 bg-[#6D28D9] relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6] via-[#7C3AED] to-[#6D28D9]"></div>
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <div className="absolute top-0 right-0 w-full h-full opacity-20">
+            <svg className="w-full h-full" viewBox="0 0 1000 400" preserveAspectRatio="none">
+              <path d="M0,400 C300,300 700,500 1000,400 L1000,0 L0,0 Z" fill="white" fillOpacity="0.1" />
             </svg>
           </div>
-          <div className="absolute top-10 right-10 w-40 h-40 bg-[#8B5CF6]/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-20 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+          <div className="absolute top-10 right-10 w-64 h-64 bg-white/10 rounded-full blur-[80px]"></div>
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-black/20 rounded-full blur-[100px]"></div>
         </div>
 
-        <div className="px-12 pb-12">
-          <div className="relative flex flex-col lg:flex-row justify-between items-end -mt-20 gap-8">
-            <div className="flex flex-col md:flex-row items-end gap-8">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        <div className="px-12">
+          <div className="relative flex flex-col lg:flex-row justify-between items-start -mt-32 gap-8">
+            <div className="flex flex-col md:flex-row items-end gap-8 w-full">
+              <div className="relative group shrink-0">
+                <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <img
                   src={profile.avatarUrl}
                   alt="Profile"
-                  className="relative w-40 h-40 rounded-[2.5rem] border-8 border-white shadow-2xl bg-white object-cover transition-transform group-hover:scale-105 duration-500"
+                  className="relative w-44 h-44 rounded-[3rem] border-8 border-white shadow-2xl bg-white object-cover transition-transform group-hover:scale-105 duration-500"
                 />
                 <button
                   onClick={() => avatarInputRef.current?.click()}
-                  className="absolute -bottom-1 -right-1 bg-[#8B5CF6] text-white w-10 h-10 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
+                  className="absolute bottom-2 right-2 bg-white text-[#6D28D9] w-12 h-12 rounded-2xl shadow-xl flex items-center justify-center hover:scale-110 transition-all active:scale-95 z-20"
                 >
-                  <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+                  <span className="material-symbols-outlined text-[24px]">photo_camera</span>
                 </button>
                 <input type="file" ref={avatarInputRef} onChange={handleAvatarChange} className="hidden" accept="image/*" />
               </div>
-              <div className="mb-2">
-                <div className="flex items-center gap-3">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={profile.name}
-                      onChange={e => setProfile({ ...profile, name: e.target.value })}
-                      className="text-4xl font-black text-text-main tracking-tight bg-background-light px-4 py-1 rounded-2xl border-none outline-none focus:ring-2 focus:ring-primary/20"
-                    />
-                  ) : (
-                    <h1 className="text-4xl font-black text-text-main tracking-tight">{profile.name}</h1>
-                  )}
-                  <span className="px-3 py-1 bg-[#8B5CF6]/10 text-[#8B5CF6] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#8B5CF6]/20">系统认证专家</span>
-                </div>
-                <p className="text-lg font-bold text-[#8B5CF6]/80 mt-2 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px]">workspace_premium</span>
-                  {profile.roles.includes(UserRole.Admin) ? "首席数字化专家" : "教研员"}
-                </p>
-                <div className="flex gap-4 mt-4">
-                  <div className="flex items-center gap-1.5 text-text-muted text-sm font-medium">
-                    <span className="material-symbols-outlined text-base">domain</span>
+              
+              <div className="mb-6 flex-1">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-4">
                     {isEditing ? (
                       <input
                         type="text"
-                        value={profile.department}
-                        onChange={e => setProfile({ ...profile, department: e.target.value })}
-                        className="bg-background-light px-2 py-0.5 rounded border-none outline-none focus:ring-1 focus:ring-primary/20"
+                        value={profile.name}
+                        onChange={e => setProfile({ ...profile, name: e.target.value })}
+                        className="text-5xl font-black text-white tracking-tight bg-white/10 px-4 py-1 rounded-2xl border border-white/20 outline-none focus:ring-4 focus:ring-white/10 w-full max-w-lg"
                       />
                     ) : (
-                      profile.department
+                      <h1 className="text-5xl font-black text-white tracking-tight drop-shadow-md">{profile.name}</h1>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-4 mt-2">
+                    <p className="text-xl font-bold text-white/90 flex items-center gap-2 drop-shadow-sm">
+                      <span className="material-symbols-outlined text-[24px]">workspace_premium</span>
+                      {profile.roles.includes(UserRole.Admin) ? "系统管理员" : "高级教研员"}
+                    </p>
+                    {((isEditing) || (profile.department && profile.department !== '未分配')) && (
+                      <>
+                        <span className="w-1 h-1 bg-white/30 rounded-full hidden md:block"></span>
+                        <div className="flex items-center gap-2 text-white/80 text-lg font-medium">
+                          <span className="material-symbols-outlined text-xl">domain</span>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={profile.department}
+                              onChange={e => setProfile({ ...profile, department: e.target.value })}
+                              className="bg-white/10 px-3 py-1 rounded-xl border border-white/20 outline-none focus:ring-4 focus:ring-white/10 text-white"
+                            />
+                          ) : (
+                            profile.department
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex gap-3 mb-2 w-full lg:w-auto">
-              {isEditing ? (
-                <button
-                  onClick={handleSave}
-                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl bg-green-500 text-white shadow-green-200"
-                >
-                  <span className="material-symbols-outlined text-[20px]">done_all</span>
-                  保存修改
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl bg-white text-text-main border border-[#E5E7EB] hover:bg-background-light"
-                >
-                  <span className="material-symbols-outlined text-[20px]">edit_square</span>
-                  完善个人资料
-                </button>
-              )}
+              <div className="flex gap-3 mb-6 self-end ml-auto">
+                {isEditing ? (
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center justify-center gap-2 px-10 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-2xl bg-white text-[#6D28D9] hover:bg-slate-50"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                    保存发布
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center justify-center gap-2 px-10 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">edit_note</span>
+                    编辑档案
+                  </button>
+                )}
+              </div>
             </div>
           </div>
+          
+          <div className="h-8"></div>
         </div>
       </div>
 

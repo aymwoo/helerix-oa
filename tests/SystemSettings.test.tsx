@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import SystemSettings from '../views/SystemSettings'
 import { PromptDatabase } from '../db'
+import { ToastProvider } from '../components/ToastContext'
 import { GoogleGenAI } from '@google/genai'
 import * as Diff from 'diff'
 
@@ -56,26 +57,26 @@ describe('SystemSettings', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(screen.getByText('系统设置')).toBeInTheDocument()
     })
 
     it('should display tab navigation', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(screen.getByText('AI 模型配置')).toBeInTheDocument()
       expect(screen.getByText('提示词工程')).toBeInTheDocument()
       expect(screen.getByText('系统维护与备份')).toBeInTheDocument()
     })
 
     it('should show AI config tab by default', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(screen.getByText('自定义 OpenAI 兼容网关')).toBeInTheDocument()
     })
   })
 
   describe('AI Config Tab', () => {
     it('should display custom providers section', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(screen.getByText('自定义 OpenAI 兼容网关')).toBeInTheDocument()
       expect(screen.getByText('连接 Qwen、DeepSeek、Ollama 等兼容接口。')).toBeInTheDocument()
     })
@@ -84,25 +85,25 @@ describe('SystemSettings', () => {
       const mockProviders = [{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'key', modelId: 'model' }]
       localStorageMock.getItem.mockReturnValue(JSON.stringify(mockProviders))
 
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       // Should display the provider after loading
       expect(screen.getByText('Test Provider')).toBeInTheDocument()
     })
 
     it('should show empty state when no providers', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(screen.getByText('暂无自定义提供商')).toBeInTheDocument()
     })
 
     it('should open add provider form when clicking add button', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       const addButton = screen.getByText('添加提供商')
       fireEvent.click(addButton)
       expect(screen.getByText('确认添加')).toBeInTheDocument()
     })
 
     it('should add custom provider', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('添加提供商'))
 
       fireEvent.change(screen.getByPlaceholderText('例如: My Ollama Server'), { target: { value: 'Test Provider' } })
@@ -123,7 +124,7 @@ describe('SystemSettings', () => {
       // Mock window.confirm
       window.confirm = vi.fn(() => true)
 
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       const deleteButton = screen.getByTitle('删除配置')
       fireEvent.click(deleteButton)
 
@@ -142,7 +143,7 @@ describe('SystemSettings', () => {
         } as any)
       )
 
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       const testButton = screen.getByTitle('测试连接')
       fireEvent.click(testButton)
 
@@ -154,13 +155,13 @@ describe('SystemSettings', () => {
 
   describe('Prompt Engineering Tab', () => {
     it('should switch to prompt engineering tab', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('提示词工程'))
       expect(screen.getByText('版本历史')).toBeInTheDocument()
     })
 
     it('should display prompt categories', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('提示词工程'))
       expect(screen.getByText('试卷分析')).toBeInTheDocument()
       expect(screen.getByText('证书识别')).toBeInTheDocument()
@@ -170,13 +171,13 @@ describe('SystemSettings', () => {
 
   describe('System Maintenance Tab', () => {
     it('should switch to system maintenance tab', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('系统维护与备份'))
       expect(screen.getByText('系统数据快照备份')).toBeInTheDocument()
     })
 
     it('should show backup section', () => {
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('系统维护与备份'))
       expect(screen.getByText('导出数据备份')).toBeInTheDocument()
     })
@@ -189,7 +190,7 @@ describe('SystemSettings', () => {
       // Mock console.error to avoid noise
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       expect(consoleSpy).toHaveBeenCalledWith("Failed to parse custom providers", expect.any(SyntaxError))
 
       consoleSpy.mockRestore()
@@ -198,7 +199,7 @@ describe('SystemSettings', () => {
     it('should handle clipboard paste error', async () => {
       navigator.clipboard.readText = vi.fn(() => Promise.reject({ name: 'NotAllowedError', message: 'Clipboard error' }))
 
-      render(<SystemSettings />)
+      render(<ToastProvider><SystemSettings /></ToastProvider>)
       fireEvent.click(screen.getByText('粘贴导入'))
 
       await waitFor(() => {
