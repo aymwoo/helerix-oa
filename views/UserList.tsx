@@ -171,11 +171,22 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
     }
   };
 
-  const handleBatchResetPwd = () => {
+  const handleBatchResetPwd = async () => {
     if (!confirm(`确定要重置这 ${selectedIds.size} 位用户的密码吗？\n重置后默认密码为：123456`)) return;
-    // In a real app, call API. For now, we simulate.
-    success(`已成功将 ${selectedIds.size} 位用户的密码重置为 123456。`);
-    setSelectedIds(new Set());
+    
+    setIsLoading(true);
+    try {
+      const ids = Array.from(selectedIds);
+      const updatedUsers = await UserDatabase.batchResetPassword(ids, '123456');
+      setUsers(updatedUsers);
+      success(`已成功将 ${selectedIds.size} 位用户的密码重置为 123456。`);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      console.error("Batch reset password failed", e);
+      error(`批量重置密码失败: ${e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBatchDelete = async () => {

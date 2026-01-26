@@ -78,3 +78,31 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+export async function PATCH(request: NextRequest) {
+  try {
+    const { ids, password } = await request.json();
+    if (!ids || !Array.isArray(ids) || !password) {
+      return NextResponse.json(
+        { error: "Invalid request data" },
+        { status: 400 },
+      );
+    }
+
+    const stmt = db.prepare("UPDATE users SET password = ? WHERE id = ?");
+    const transaction = db.transaction((userIDs) => {
+      for (const id of userIDs) {
+        stmt.run(password, id);
+      }
+    });
+
+    transaction(ids);
+
+    return NextResponse.json({ success: true, count: ids.length });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Failed to batch update users" },
+      { status: 500 },
+    );
+  }
+}

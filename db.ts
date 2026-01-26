@@ -59,6 +59,19 @@ export const UserDatabase = {
     if (!res.ok) throw new Error("Failed to delete user");
     return UserDatabase.getAll();
   },
+
+  batchResetPassword: async (
+    ids: string[],
+    password: string,
+  ): Promise<User[]> => {
+    const res = await fetch(`${API_BASE}/users`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, password }),
+    });
+    if (!res.ok) throw new Error("Failed to batch reset passwords");
+    return UserDatabase.getAll();
+  },
 };
 
 // ============ CERTIFICATES ============

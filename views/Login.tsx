@@ -71,7 +71,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     setError(null);
 
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+    const searchTerm = email.toLowerCase().trim();
+    const user = users.find(u => 
+      u.email.toLowerCase() === searchTerm || 
+      u.name.toLowerCase() === searchTerm
+    );
+    
     if (user) {
       if (user.password === password) {
         onLogin(user);
@@ -79,7 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setError("密码不正确");
       }
     } else {
-      setError("未找到该邮箱对应的用户账户");
+      setError("未找到该邮箱或用户名对应的账户");
     }
   };
 
@@ -192,7 +197,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   onClick={() => setIsQuickLogin(false)}
                   className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${!isQuickLogin ? 'bg-white text-slate-900 shadow-lg' : 'text-white/60 hover:text-white'}`}
                 >
-                  邮箱登录
+                  账号登录
                 </button>
               </div>
 
@@ -245,14 +250,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 /* Email Login Form */
                 <form onSubmit={handleEmailLogin} className="space-y-4">
                   <div>
-                    <label className="block text-xs text-white/40 uppercase tracking-wider font-bold mb-2">邮箱地址</label>
+                    <label className="block text-xs text-white/40 uppercase tracking-wider font-bold mb-2">邮箱 / 用户名</label>
                     <div className="relative">
-                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">mail</span>
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">account_circle</span>
                       <input
-                        type="email"
+                        type="text"
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setError(null); }}
-                        placeholder="name@example.com"
+                        placeholder="请输入邮箱或姓名"
                         className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                       />
                     </div>
