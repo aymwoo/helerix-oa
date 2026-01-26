@@ -3,12 +3,14 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider } from '../types';
 import { CertificateDatabase, PromptDatabase, FileManager } from '../db';
+import { useToast } from '../components/ToastContext';
 
 interface CertificateListProps {
   onCertSelect: (id: string) => void;
 }
 
 const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
+  const { success, error, info, warning } = useToast();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [prompts, setPrompts] = useState<PromptTemplate[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string>("cert-default");
@@ -114,7 +116,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     const updated = await PromptDatabase.add(newPrompt);
     setPrompts(updated);
     setSelectedPromptId(newPrompt.id);
-    alert("档案录入提示词已保存。");
+    success("档案录入提示词已保存。");
   };
 
   const handleSort = (key: keyof Certificate) => {
@@ -203,7 +205,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         setFormData({ ...formData, credentialUrl: fileUri });
       } catch (err) {
         console.error("Upload failed", err);
-        alert("文件上传失败");
+        error("文件上传失败");
       } finally {
         setIsUploading(false);
       }
@@ -219,8 +221,10 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       const updated = await CertificateDatabase.getAll();
       setCertificates(updated);
       setSelectedIds(new Set());
+      success(deleteConfirmation.isBatch ? `已成功删除 ${idsToDelete.length} 项记录` : "该记录已成功删除");
     } catch (e) {
       console.error(e);
+      error("删除操作失败，请重试");
     } finally {
       setIsLoading(false);
     }
@@ -228,7 +232,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
   const handleSaveCertificate = async () => {
     if (!formData.name || !formData.issuer || !formData.issueDate) {
-      alert("请填写必要字段");
+      warning("请填写必要字段");
       return;
     }
     setIsLoading(true);
@@ -328,7 +332,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         if (videoRef.current) videoRef.current.srcObject = stream;
       }, 100);
     } catch (err) {
-      alert("无法访问摄像头，请检查权限 (需 HTTPS 或 localhost)。");
+      error("无法访问摄像头，请检查权限 (需 HTTPS 或 localhost)。");
       console.error(err);
     }
   };
@@ -482,6 +486,24 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
     setIsLoading(true);
     try {
+      // Save images to FileManager
+      const savedFileUris: string[] = [];
+      for (const att of aiAttachments) {
+          try {
+             // Convert base64 to Blob -> File
+             const byteChars = atob(att.data);
+             const byteNumbers = new Array(byteChars.length);
+             for (let i=0; i<byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+             const byteArray = new Uint8Array(byteNumbers);
+             const blob = new Blob([byteArray], {type: att.type === 'pdf' ? 'application/pdf' : 'image/jpeg'});
+             const file = new File([blob], att.name, {type: blob.type});
+             // UPLOAD
+             const uri = await FileManager.saveFile(file);
+             savedFileUris.push(uri);
+          } catch(e) { console.error("Failed to save attachment", e); }
+      }
+      const primaryCredentialUrl = savedFileUris.length > 0 ? savedFileUris[0] : "";
+
       let updatedCerts = certificates;
       for (const previewCert of aiPreviewData) {
         const newCert: Certificate = {
@@ -491,7 +513,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
           issueDate: previewCert.issueDate || new Date().toISOString().split('T')[0],
           level: previewCert.level || HonorLevel.Municipal,
           category: previewCert.category || CertificateCategory.Other,
-          credentialUrl: "",
+          credentialUrl: primaryCredentialUrl,
           hours: previewCert.hours || 0,
           timestamp: Date.now()
         };
@@ -499,10 +521,11 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       }
       setCertificates(updatedCerts);
       closeAIModal();
-      alert(`成功导入 ${aiPreviewData.length} 条证书记录！`);
+      success(`成功导入 ${aiPreviewData.length} 条证书记录！`);
     } catch (e) {
       console.error("Import failed", e);
       setAiError("导入数据库失败，请重试");
+      error("导入失败");
     } finally {
       setIsLoading(false);
     }
@@ -802,6 +825,41 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               <button onClick={handleSaveCertificate} disabled={isUploading} className="px-6 py-2.5 bg-[#8B5CF6] text-white rounded-lg font-bold text-sm shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-50">
                 {editingCertId ? '保存修改' : '提交登记'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-in zoom-in duration-200">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center">
+                <span className="material-symbols-outlined text-4xl">delete_forever</span>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-text-main">确认删除？</h3>
+                <p className="text-sm text-text-muted mt-2">
+                  {deleteConfirmation.isBatch 
+                    ? `确定要永久删除选中的 ${selectedIds.size} 项记录吗？此操作不可撤销。` 
+                    : "确定要永久删除这项荣誉记录吗？此操作不可撤销。"}
+                </p>
+              </div>
+              <div className="flex gap-3 w-full mt-4">
+                <button 
+                  onClick={() => setDeleteConfirmation({ isOpen: false, certId: null, isBatch: false })}
+                  className="flex-1 py-3 border border-border-light rounded-xl font-bold text-sm text-text-muted hover:bg-gray-50 transition-colors"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95"
+                >
+                  确认删除
+                </button>
+              </div>
             </div>
           </div>
         </div>

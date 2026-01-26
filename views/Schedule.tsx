@@ -16,7 +16,10 @@ const COLORS_POOL = [
     'bg-orange-100 text-orange-700 border-orange-200'
 ];
 
+import { useToast } from '../components/ToastContext';
+
 const Schedule: React.FC = () => {
+  const { toast, success, error, info } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeTag[]>([]);
@@ -164,9 +167,14 @@ const Schedule: React.FC = () => {
           }
           setSelectedDates(newSet);
       } else {
-          // Normal Click: Clear others, select this one
-          setSelectedDates(new Set([dateStr]));
-          setLastClickDate(dateStr);
+          // Normal Click: Toggle selection
+          if (selectedDates.has(dateStr)) {
+              setSelectedDates(new Set());
+              setLastClickDate(null);
+          } else {
+              setSelectedDates(new Set([dateStr]));
+              setLastClickDate(dateStr);
+          }
       }
   };
   
@@ -198,7 +206,7 @@ const Schedule: React.FC = () => {
 
   const handleSaveEvent = async () => {
     if (!newEvent.title || !newEvent.startTime || !newEvent.endTime) {
-        alert("请填写完整的事件信息");
+        error("请填写完整的事件信息");
         return;
     }
     
@@ -242,6 +250,7 @@ const Schedule: React.FC = () => {
       if(confirm("确定删除此日程吗？")) {
           const updated = await EventsDatabase.delete(id);
           setEvents(updated);
+          success("日程已删除");
       }
   }
 
@@ -349,7 +358,7 @@ const Schedule: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 h-full flex flex-col relative">
       {/* Header & Toolbar */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-xl shadow border border-[#E5E7EB] shrink-0 select-none">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-8 rounded-[2rem] shadow-sm border border-[#E5E7EB] shrink-0 select-none">
          <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 bg-background-light p-1.5 rounded-2xl border border-[#E5E7EB]">
                 <button onClick={handlePrevMonth} className="p-2 hover:bg-white rounded-lg shadow-sm transition-all"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
@@ -376,7 +385,7 @@ const Schedule: React.FC = () => {
              
              <button 
                 onClick={() => setExcludeWeekends(!excludeWeekends)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-xs font-semibold transition-all border ${excludeWeekends ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-xs font-semibold transition-all border ${excludeWeekends ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-200' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-gray-50'}`}
              >
                  <span className="material-symbols-outlined text-[18px]">{excludeWeekends ? 'event_busy' : 'weekend'}</span>
                  {excludeWeekends ? '已排除周末' : '包含周末'}
@@ -385,7 +394,7 @@ const Schedule: React.FC = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className={`flex-1 overflow-y-auto bg-white rounded-lg border border-[#E5E7EB] shadow p-6 ${showAvailableOnly ? 'bg-green-50/30' : ''} select-none`}>
+      <div className={`flex-1 overflow-y-auto bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm p-8 ${showAvailableOnly ? 'bg-green-50/20' : ''} select-none`}>
          {/* Weekday Headers */}
          <div className={`grid mb-4 ${excludeWeekends ? 'grid-cols-5' : 'grid-cols-7'}`}>
             {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map((day, index) => {
@@ -431,25 +440,25 @@ const Schedule: React.FC = () => {
                         onDoubleClick={() => handleDateDoubleClick(dayItem.dateStr)}
                         className={`
                             relative p-3 rounded-2xl border transition-all cursor-pointer group min-h-[100px] flex flex-col gap-2
-                            ${item.isToday ? 'ring-2 ring-primary ring-offset-2 z-10' : ''}
-                            ${isSelected ? 'ring-2 ring-primary bg-primary/5 shadow-inner' : ''}
+                            ${item.isToday ? 'bg-gradient-to-br from-violet-50 to-white ring-2 ring-[#8B5CF6]/30 shadow-lg' : 'bg-white'}
+                            ${isSelected ? 'ring-2 ring-[#8B5CF6] bg-violet-50/50 shadow-inner' : 'border-[#E5E7EB]'}
                             ${hasEvents && !isSelected
-                                ? 'bg-white border-purple-200 hover:border-purple-400 hover:shadow-md' 
+                                ? 'border-[#8B5CF6]/30 hover:border-[#8B5CF6]/60 hover:shadow-md' 
                                 : isSelected 
-                                    ? 'border-primary' 
+                                    ? 'border-[#8B5CF6]' 
                                     : showAvailableOnly 
-                                        ? 'bg-green-100 border-green-300 shadow-md transform scale-[1.02]' 
-                                        : 'bg-green-50/50 border-green-100 hover:bg-green-100 hover:border-green-300 hover:shadow-md'
+                                        ? 'bg-green-50 border-green-200' 
+                                        : 'hover:border-[#8B5CF6]/40 hover:shadow-sm'
                             }
                         `}
                     >
                         {/* Header Row in Cell */}
                         <div className="flex justify-between items-start">
                              <span className={`
-                                text-sm font-black 
+                                text-sm font-black flex items-center justify-center rounded-full
                                 ${item.isToday 
-                                    ? 'bg-primary text-white w-6 h-6 flex items-center justify-center rounded-full shadow-sm -mt-1 -ml-1' 
-                                    : (hasEvents ? 'text-text-main' : (showAvailableOnly ? 'text-green-800' : 'text-green-700'))
+                                    ? 'bg-[#8B5CF6] text-white w-7 h-7 shadow-md -mt-1 -ml-1 ring-4 ring-violet-100' 
+                                    : (isSelected ? 'text-[#8B5CF6]' : (hasEvents ? 'text-text-main' : 'text-text-muted'))
                                 }
                              `}>{item.day}</span>
                              
@@ -687,7 +696,10 @@ const Schedule: React.FC = () => {
 
                 <div className="mt-8 flex gap-3 shrink-0">
                     <button onClick={() => setIsAddModalOpen(false)} className="flex-1 py-3 border border-border-light rounded-xl font-bold text-sm text-text-muted hover:bg-gray-50 transition-colors">取消</button>
-                    <button onClick={handleSaveEvent} className="flex-1 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-all active:scale-95">{isBatchMode ? '批量创建' : '确认添加'}</button>
+                    <button onClick={handleSaveEvent} className="flex-1 py-4 bg-[#8B5CF6] text-white rounded-2xl font-black text-sm shadow-xl shadow-[#8B5CF6]/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                        {isBatchMode ? '批量创建日程' : '确认添加日程'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -718,8 +730,9 @@ const Schedule: React.FC = () => {
                             <p className="text-sm font-medium">今日暂无安排</p>
                             <button 
                                 onClick={(e) => { setViewingDate(null); handleAddIconClick(e, viewingDate); }} 
-                                className="mt-4 px-6 py-2 bg-primary/5 text-primary rounded-xl text-sm font-bold hover:bg-primary/10 transition-colors"
+                                className="mt-6 px-8 py-3 bg-primary text-white rounded-2xl font-black text-sm shadow-xl shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
                             >
+                                <span className="material-symbols-outlined text-[18px]">add_circle</span>
                                 添加第一项日程
                             </button>
                         </div>

@@ -35,8 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser,
   return (
     <aside className="w-64 flex-col bg-white border-r border-gray-200 hidden md:flex transition-colors duration-200">
       {/* Brand Header */}
-      <div className="h-20 flex items-center justify-center px-4 border-b border-gray-100 overflow-hidden">
-        <img src={APP_LOGO} alt="Logo" className="w-full h-full object-contain" />
+      <div className="h-24 flex items-center justify-start px-6 border-b border-gray-100 overflow-hidden bg-gradient-to-r from-violet-50/30 to-transparent">
+        <div className="bg-white p-2.5 rounded-2xl border border-gray-100 shadow-sm ring-4 ring-violet-50/50 group hover:scale-105 transition-transform cursor-pointer" onClick={() => onNavigate('schedule')}>
+          <img src={APP_LOGO} alt="Logo" className="h-10 w-auto object-contain" />
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-6 space-y-1">

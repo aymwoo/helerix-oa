@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
+import { useToast } from '../components/ToastContext';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'testing';
 
 const AIConfig: React.FC = () => {
+  const { success, warning } = useToast();
   const [config, setConfig] = useState({
     defaultSubject: 'math',
     defaultGrade: 'junior-2',
@@ -60,7 +62,7 @@ const AIConfig: React.FC = () => {
 
   const testAuxiliaryConnection = async () => {
     if (!config.auxiliaryApiKey) {
-      alert("请先输入备用 API 密钥");
+      warning("请先输入备用 API 密钥");
       return;
     }
     
@@ -79,7 +81,7 @@ const AIConfig: React.FC = () => {
   };
 
   const handleSave = () => {
-    alert("配置已成功保存并应用到教研引擎。");
+    success("配置已成功保存并应用到教研引擎。");
   };
 
   // Previewer functions

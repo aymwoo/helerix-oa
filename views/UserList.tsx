@@ -4,6 +4,7 @@ import { UserStatus, User, UserRole } from '../types';
 import { UserDatabase } from '../db';
 import { AVATAR_ALICE, AVATAR_MARCUS, AVATAR_SARAH, AVATAR_DAVID, AVATAR_EMILY } from '../constants';
 import { read, utils } from 'xlsx';
+import { useToast } from '../components/ToastContext';
 
 interface UserListProps {
   onUserSelect: (id: string) => void;
@@ -11,6 +12,7 @@ interface UserListProps {
 }
 
 const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
+  const { success, error, info, warning } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const isAdmin = currentUser?.roles.includes(UserRole.Admin);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,7 +128,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
 
   const handleSaveUser = async () => {
     if (!formData.name || !formData.department || formData.roles.length === 0) {
-      alert("请完整填写教研员信息并分配学科");
+      warning("请完整填写教研员信息并分配学科");
       return;
     }
 
@@ -172,7 +174,7 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
   const handleBatchResetPwd = () => {
     if (!confirm(`确定要重置这 ${selectedIds.size} 位用户的密码吗？\n重置后默认密码为：123456`)) return;
     // In a real app, call API. For now, we simulate.
-    alert(`已成功将 ${selectedIds.size} 位用户的密码重置为 123456。`);
+    success(`已成功将 ${selectedIds.size} 位用户的密码重置为 123456。`);
     setSelectedIds(new Set());
   };
 
@@ -187,10 +189,10 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
       const updatedUsers = await UserDatabase.getAll();
       setUsers(updatedUsers);
       setSelectedIds(new Set());
-      alert(`已批量删除 ${selectedIds.size} 位用户。`);
+      success(`已批量删除 ${selectedIds.size} 位用户。`);
     } catch (e: any) {
       console.error("Batch delete failed", e);
-      alert(`批量删除失败: ${e.message}`);
+      error(`批量删除失败: ${e.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -296,16 +298,16 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
 
         if (errors.length > 0) {
           const errorMsg = errors.slice(0, 15).join('\n') + (errors.length > 15 ? `\n...以及其他 ${errors.length - 15} 个错误` : '');
-          alert(`导入完成：成功 ${importedCount} 条，失败 ${errors.length} 条。\n\n具体原因：\n${errorMsg}`);
+          warning(`导入完成：成功 ${importedCount} 条，失败 ${errors.length} 条。\n\n具体原因：\n${errorMsg}`);
         } else if (importedCount > 0) {
-          alert(`成功导入 ${importedCount} 名教研员`);
+          success(`成功导入 ${importedCount} 名教研员`);
         } else {
-             alert("未导入任何数据，请检查文件是否包含有效记录。");
+          info("未导入任何数据，请检查文件是否包含有效记录。");
         }
 
       } catch (error: any) {
         console.error("Import failed", error);
-        alert(`文件解析严重错误: ${error.message || "文件格式可能不正确"}`);
+        error(`文件解析严重错误: ${error.message || "文件格式可能不正确"}`);
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";

@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { CustomProvider } from '../types';
+import { useToast } from '../components/ToastContext';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'testing';
 
 const AIProviderConfig: React.FC = () => {
+  const { success, warning, info } = useToast();
   const [config, setConfig] = useState({
     auxiliaryApiKey: '',
     auxiliaryProvider: 'openai'
@@ -46,7 +48,7 @@ const AIProviderConfig: React.FC = () => {
 
   const handleAddCustomProvider = () => {
     if (!newProvider.name || !newProvider.baseUrl || !newProvider.apiKey) {
-      alert("请填写必要信息 (名称, Base URL, API Key)");
+      warning("请填写必要信息 (名称, Base URL, API Key)");
       return;
     }
     const provider: CustomProvider = {
@@ -143,7 +145,7 @@ const AIProviderConfig: React.FC = () => {
 
   const testAuxiliaryConnection = async () => {
     if (!config.auxiliaryApiKey) {
-      alert("请先输入备用 API 密钥");
+      warning("请先输入备用 API 密钥");
       return;
     }
     
@@ -162,7 +164,7 @@ const AIProviderConfig: React.FC = () => {
   };
 
   const handleSave = () => {
-    alert("提供商配置已成功保存。");
+    success("提供商配置已成功保存。");
   };
 
   const getStatusBadge = (status: ConnectionStatus) => {

@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 
 import { ExamAnalysis, PromptTemplate, CustomProvider } from '../types';
 import { ExamAnalysisDatabase, PromptDatabase } from '../db';
+import { useToast } from '../components/ToastContext';
 
 const AIExamAnalysis: React.FC = () => {
+  const { success, error } = useToast();
   const [history, setHistory] = useState<ExamAnalysis[]>([]);
   const [prompts, setPrompts] = useState<PromptTemplate[]>([]);
   const [selectedPromptId, setSelectedPromptId] = useState<string>("default");
@@ -99,7 +101,7 @@ const AIExamAnalysis: React.FC = () => {
     const updated = await PromptDatabase.add(newPrompt);
     setPrompts(updated);
     setSelectedPromptId(newPrompt.id);
-    alert("试卷分析提示词版本已保存。");
+    success("试卷分析提示词版本已保存。");
   };
 
   const messages = [
@@ -209,9 +211,9 @@ const AIExamAnalysis: React.FC = () => {
       setHistory(updatedHistory);
       setCurrentResult(newAnalysis);
 
-    } catch (error) {
-      console.error("AI 分析失败", error);
-      alert(`AI 深度分析失败: ${error instanceof Error ? error.message : "未知错误"}`);
+    } catch (err) {
+      console.error("AI 分析失败", err);
+      error(`AI 深度分析失败: ${err instanceof Error ? err.message : "未知错误"}`);
     } finally {
       clearInterval(interval);
       setIsAnalyzing(false);
@@ -272,29 +274,28 @@ const AIExamAnalysis: React.FC = () => {
             <select
               value={selectedProviderId}
               onChange={(e) => setSelectedProviderId(e.target.value)}
-              className="appearance-none bg-white border border-[#E5E7EB] pl-9 pr-8 py-3 rounded-lg text-sm font-bold text-text-main focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer shadow-sm hover:bg-gray-50 transition-all min-w-[140px]"
+              className="appearance-none bg-white border border-[#E5E7EB] pl-10 pr-10 py-3.5 rounded-2xl text-sm font-black text-text-main focus:ring-4 focus:ring-[#8B5CF6]/10 focus:border-[#8B5CF6] outline-none cursor-pointer shadow-sm hover:shadow-md transition-all min-w-[160px]"
             >
-
               {customProviders.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            <span className="material-symbols-outlined absolute left-2.5 top-3.5 text-[18px] text-primary">cloud</span>
-            <span className="material-symbols-outlined absolute right-2 top-3.5 text-[18px] text-text-muted pointer-events-none">arrow_drop_down</span>
+            <span className="material-symbols-outlined absolute left-3 top-4 text-[20px] text-[#8B5CF6]">cloud</span>
+            <span className="material-symbols-outlined absolute right-3 top-4 text-[20px] text-text-muted pointer-events-none">arrow_drop_down</span>
           </div>
 
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`px-5 py-3 rounded-lg font-bold transition-all flex items-center gap-2 border shadow-sm active:scale-95 ${showSettings ? 'bg-primary text-white border-primary' : 'bg-white text-text-main border-[#E5E7EB] hover:bg-gray-50'}`}
+            className={`px-6 py-3.5 rounded-2xl font-black transition-all flex items-center gap-2.5 border shadow-sm active:scale-95 ${showSettings ? 'bg-[#8B5CF6] text-white border-[#8B5CF6] shadow-xl shadow-[#8B5CF6]/20' : 'bg-white text-text-main border-[#E5E7EB] hover:bg-gray-50'}`}
           >
-            <span className="material-symbols-outlined">{showSettings ? 'auto_fix' : 'psychology_alt'}</span>
+            <span className="material-symbols-outlined text-[22px]">{showSettings ? 'auto_fix' : 'psychology_alt'}</span>
             分析指令集
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
+            className="bg-[#8B5CF6] text-white px-8 py-3.5 rounded-2xl font-black shadow-xl shadow-[#8B5CF6]/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2.5"
           >
-            <span className="material-symbols-outlined">upload_file</span>
+            <span className="material-symbols-outlined text-[22px]">upload_file</span>
             上传新试卷
           </button>
         </div>
@@ -365,9 +366,9 @@ const AIExamAnalysis: React.FC = () => {
           {isAnalyzing ? (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-20 flex flex-col items-center justify-center text-center space-y-6 shadow-sm">
               <div className="relative">
-                <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <div className="w-24 h-24 border-4 border-[#8B5CF6]/20 border-t-[#8B5CF6] rounded-full animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary text-4xl animate-pulse">psychology</span>
+                  <span className="material-symbols-outlined text-[#8B5CF6] text-4xl animate-pulse">psychology</span>
                 </div>
               </div>
               <div>
@@ -486,19 +487,23 @@ const AIExamAnalysis: React.FC = () => {
           ) : (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="bg-white rounded-xl border-2 border-dashed border-[#E5E7EB] p-20 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group min-h-[500px]"
+              className="bg-white rounded-[3rem] border-4 border-dashed border-[#E5E7EB] p-24 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#8B5CF6]/50 hover:bg-[#8B5CF6]/5 transition-all group min-h-[550px] shadow-sm hover:shadow-2xl hover:shadow-[#8B5CF6]/5"
             >
-              <div className="w-20 h-20 rounded-2xl bg-background-light flex items-center justify-center text-text-muted group-hover:scale-110 group-hover:text-primary transition-all mb-6">
-                <span className="material-symbols-outlined text-5xl">add_photo_alternate</span>
+              <div className="w-24 h-24 rounded-3xl bg-background-light flex items-center justify-center text-text-muted group-hover:scale-110 group-hover:bg-[#8B5CF6]/10 group-hover:text-[#8B5CF6] transition-all mb-8 shadow-inner ring-8 ring-transparent group-hover:ring-[#8B5CF6]/5">
+                <span className="material-symbols-outlined text-6xl">add_photo_alternate</span>
               </div>
-              <h3 className="text-xl font-bold text-text-main mb-2">开启 AI 教研之旅</h3>
-              <p className="text-text-muted max-w-xs mb-8">点击、拖拽或直接<b>粘贴(Ctrl+V)</b>试卷照片，AI 将为您生成深度教研报告。</p>
+              <h3 className="text-3xl font-black text-text-main mb-4 tracking-tight">开启 AI 教研分析</h3>
+              <p className="text-sm font-bold text-text-muted max-w-sm mb-12 leading-relaxed">
+                点击此处、拖拽文件或直接使用 <kbd className="bg-gray-100 px-2 py-0.5 rounded border border-gray-200 text-text-main mx-1">Ctrl+V</kbd> 粘贴试卷照片。
+                <br />
+                <span className="text-xs opacity-60 font-medium">支持 JPG, PNG 格式的高清试卷影像</span>
+              </p>
               <button
                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                className="bg-primary text-white px-8 py-4 rounded-2xl font-bold shadow-xl shadow-primary/30 hover:bg-violet-700 transition-all flex items-center gap-3 active:scale-95"
+                className="bg-[#8B5CF6] text-white px-10 py-5 rounded-[2rem] font-black text-lg shadow-2xl shadow-[#8B5CF6]/30 hover:bg-violet-700 transition-all flex items-center gap-3 active:scale-95"
               >
-                <span className="material-symbols-outlined">cloud_upload</span>
-                选择图片并分析
+                <span className="material-symbols-outlined text-[28px]">cloud_upload</span>
+                立即识别并分析
               </button>
             </div>
           )}

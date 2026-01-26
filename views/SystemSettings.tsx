@@ -4,11 +4,13 @@ import { GoogleGenAI } from "@google/genai";
 import { CustomProvider, PromptTemplate, PromptCategory } from '../types';
 import { DatabaseManager, PromptDatabase } from '../db';
 import * as Diff from 'diff';
+import { useToast } from '../components/ToastContext';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'testing';
 type SettingsTab = 'ai-config' | 'prompt-engineering' | 'system-maintenance';
 
 const SystemSettings: React.FC = () => {
+  const { success, error, warning, info } = useToast();
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai-config');
 
   // Custom Providers State
@@ -87,7 +89,7 @@ const SystemSettings: React.FC = () => {
 
   const handleAddCustomProvider = () => {
     if (!newProvider.name || !newProvider.baseUrl || !newProvider.apiKey) {
-      alert("请填写必要信息 (名称, Base URL, API Key)");
+      warning("请填写必要信息 (名称, Base URL, API Key)");
       return;
     }
 
@@ -139,7 +141,7 @@ const SystemSettings: React.FC = () => {
         const json = JSON.parse(content);
 
         if (!Array.isArray(json)) {
-          alert("导入失败：JSON 根节点必须是数组格式。");
+          error("导入失败：JSON 根节点必须是数组格式。");
           return;
         }
 
@@ -157,19 +159,19 @@ const SystemSettings: React.FC = () => {
         }
 
         if (validProviders.length === 0) {
-          alert("未找到有效的提供商配置项。请检查 JSON 结构 (需包含 name, baseUrl, apiKey)。");
+          error("未找到有效的提供商配置项。请检查 JSON 结构 (需包含 name, baseUrl, apiKey)。");
           return;
         }
 
         if (confirm(`解析成功，发现 ${validProviders.length} 个配置项。\n点击确定将其合并到当前列表。`)) {
           const updated = [...customProviders, ...validProviders];
           saveCustomProviders(updated);
-          alert("导入完成！");
+          success("导入完成！");
         }
 
-      } catch (error) {
-        console.error(error);
-        alert("文件解析错误，请确保是有效的 JSON 文件。");
+      } catch (e) {
+        console.error(e);
+        error("文件解析错误，请确保是有效的 JSON 文件。");
       } finally {
         if (importInputRef.current) importInputRef.current.value = "";
       }
@@ -237,7 +239,7 @@ const SystemSettings: React.FC = () => {
         setPastePreviewJson('');
         setPastePreviewError("无法自动读取剪贴板，请手动粘贴内容到下方文本框。");
       } else {
-        alert(`剪贴板访问失败：${error.message}`);
+        error(`剪贴板访问失败：${error.message}`);
       }
     }
   };
@@ -250,7 +252,7 @@ const SystemSettings: React.FC = () => {
     setPastePreviewJson('');
     setPastePreviewProviders([]);
     setPastePreviewError(null);
-    alert(`成功导入 ${pastePreviewProviders.length} 个提供商配置！`);
+    success(`成功导入 ${pastePreviewProviders.length} 个提供商配置！`);
   };
 
   const cancelPasteImport = () => {
@@ -333,7 +335,7 @@ const SystemSettings: React.FC = () => {
       }
     } catch (e) {
       console.error("Backup failed", e);
-      alert("导出备份失败");
+      error("导出备份失败");
     }
   };
 
@@ -352,16 +354,16 @@ const SystemSettings: React.FC = () => {
       try {
         const buffer = evt.target?.result as ArrayBuffer;
         const u8 = new Uint8Array(buffer);
-        const success = await DatabaseManager.importDatabase(u8);
-        if (success) {
-          alert("系统数据恢复成功。页面即将刷新以应用变更。");
-          window.location.reload();
+        const successResult = await DatabaseManager.importDatabase(u8);
+        if (successResult) {
+          success("系统数据恢复成功。页面即将刷新以应用变更。");
+          setTimeout(() => window.location.reload(), 1500);
         } else {
           throw new Error("Import function returned false");
         }
       } catch (err) {
         console.error(err);
-        alert("恢复失败：文件格式错误或数据库损坏。");
+        error("恢复失败：文件格式错误或数据库损坏。");
         setIsRestoring(false);
       } finally {
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -388,7 +390,7 @@ const SystemSettings: React.FC = () => {
     // Refresh list to ensure we see all versions
     fetchPrompts();
     setCurrentPromptName(name);
-    alert("提示词版本已保存并设为默认。");
+    success("提示词版本已保存并设为默认。");
   };
 
   const handleRestoreVersion = (p: PromptTemplate) => {

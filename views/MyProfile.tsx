@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, UserRole, ExamAnalysis, ScheduleEvent, Certificate, CertificateCategory } from '../types';
 import { UserDatabase, ExamAnalysisDatabase, EventsDatabase, CertificateDatabase, FileManager } from '../db';
 import { AVATAR_ALEX } from '../constants';
+import { useToast } from '../components/ToastContext';
 
 interface ActivityItem {
   id: string;
@@ -17,9 +18,11 @@ interface ActivityItem {
 
 interface MyProfileProps {
   currentUser: User | null;
+  onUserUpdate: (user: User) => void;
 }
 
-const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
+const MyProfile: React.FC<MyProfileProps> = ({ currentUser, onUserUpdate }) => {
+  const { success, error } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<User | null>(currentUser);
@@ -139,11 +142,12 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
     setIsLoading(true);
     try {
       await UserDatabase.update(profile);
+      onUserUpdate(profile);
       setIsEditing(false);
-      alert("个人资料已成功保存并同步。");
+      success("个人资料已成功保存并同步。");
     } catch (err) {
       console.error("保存失败", err);
-      alert("保存失败，请检查连接。");
+      error("保存失败，请检查连接。");
     } finally {
       setIsLoading(false);
     }
@@ -156,10 +160,17 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
         const fileUri = await FileManager.saveFile(file);
         const dataUrl = await FileManager.resolveToDataUrl(fileUri);
         if (dataUrl) {
-          setProfile({ ...profile, avatarUrl: dataUrl });
+          const updatedProfile = { ...profile, avatarUrl: dataUrl };
+          setProfile(updatedProfile);
+          
+          // Auto-save avatar even if not in full edit mode
+          await UserDatabase.update(updatedProfile);
+          onUserUpdate(updatedProfile);
+          success("头像已更新并同步。");
         }
       } catch (err) {
         console.error("Avatar upload failed", err);
+        error("头像上传失败");
       }
     }
   };
@@ -217,15 +228,16 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 overflow-visible">
       {/* Hero Header Card */}
-      <div className="relative bg-white rounded-[3rem] border border-border-light shadow-2xl shadow-primary/5 overflow-hidden">
-        <div className="h-64 bg-gradient-to-br from-slate-900 via-primary to-violet-800 relative">
-          <div className="absolute top-0 right-0 w-full h-full opacity-20">
+      <div className="relative bg-white rounded-[3rem] border border-[#E5E7EB] shadow-2xl shadow-primary/5 overflow-hidden">
+        <div className="h-64 bg-slate-950 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#8B5CF6]/20 via-slate-900 to-slate-950"></div>
+          <div className="absolute top-0 right-0 w-full h-full opacity-10">
             <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
               <path d="M0 100 C 20 0 50 0 100 100 Z" fill="white" fillOpacity="0.1" />
             </svg>
           </div>
-          <div className="absolute top-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 left-20 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
+          <div className="absolute top-10 right-10 w-40 h-40 bg-[#8B5CF6]/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 left-20 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
         </div>
 
         <div className="px-12 pb-12">
@@ -240,7 +252,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
                 />
                 <button
                   onClick={() => avatarInputRef.current?.click()}
-                  className="absolute -bottom-1 -right-1 bg-primary text-white w-10 h-10 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
+                  className="absolute -bottom-1 -right-1 bg-[#8B5CF6] text-white w-10 h-10 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
                 >
                   <span className="material-symbols-outlined text-[20px]">photo_camera</span>
                 </button>
@@ -258,9 +270,9 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
                   ) : (
                     <h1 className="text-4xl font-black text-text-main tracking-tight">{profile.name}</h1>
                   )}
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">系统认证专家</span>
+                  <span className="px-3 py-1 bg-[#8B5CF6]/10 text-[#8B5CF6] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#8B5CF6]/20">系统认证专家</span>
                 </div>
-                <p className="text-lg font-bold text-primary/80 mt-2 flex items-center gap-2">
+                <p className="text-lg font-bold text-[#8B5CF6]/80 mt-2 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[20px]">workspace_premium</span>
                   {profile.roles.includes(UserRole.Admin) ? "首席数字化专家" : "教研员"}
                 </p>
@@ -294,7 +306,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
               ) : (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl bg-white text-text-main border border-border-light hover:bg-background-light"
+                  className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 shadow-xl bg-white text-text-main border border-[#E5E7EB] hover:bg-background-light"
                 >
                   <span className="material-symbols-outlined text-[20px]">edit_square</span>
                   完善个人资料
@@ -309,10 +321,10 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
         {/* Left Column (40%) - Stats & Timeline */}
         <div className="lg:col-span-5 space-y-8">
           {/* Core Impact Dashboard (Light Theme) */}
-          <div className="bg-white rounded-[2.5rem] p-8 border border-border-light shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
+          <div className="bg-white rounded-[2.5rem] p-8 border border-[#E5E7EB] shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#8B5CF6]/5 rounded-full -mr-16 -mt-16 blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
             <h3 className="text-xl font-black text-text-main mb-8 flex items-center gap-3 relative z-10">
-              <span className="material-symbols-outlined text-primary">data_thresholding</span>
+              <span className="material-symbols-outlined text-[#8B5CF6]">data_thresholding</span>
               核心工作量统计
             </h3>
             <div className="grid grid-cols-2 gap-4 relative z-10">
@@ -340,13 +352,13 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
           </div>
 
           {/* Recent Activity Timeline - Real Data from All Sections */}
-          <div className="bg-white p-8 rounded-[2.5rem] border border-border-light shadow-sm">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-[#E5E7EB] shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-black text-text-main flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary">history</span>
+                <span className="material-symbols-outlined text-[#8B5CF6]">history</span>
                 教研动态追踪
               </h3>
-              <span className="px-3 py-1 bg-background-light text-[10px] font-bold rounded-lg border border-border-light text-text-muted uppercase tracking-widest">Live Updates</span>
+              <span className="px-3 py-1 bg-background-light text-[10px] font-bold rounded-lg border border-[#E5E7EB] text-text-muted uppercase tracking-widest">Live Updates</span>
             </div>
             <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-border-light">
               {activities.length === 0 ? (
@@ -370,7 +382,7 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
                         {act.subtitle}
                       </p>
                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                        {act.action} <span className="font-black text-primary">“{act.title}”</span>
+                        {act.action} <span className="font-black text-[#8B5CF6]">“{act.title}”</span>
                       </p>
                     </div>
                   </div>
@@ -383,17 +395,17 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
         {/* Right Column (60%) - Details & Security */}
         <div className="lg:col-span-7 space-y-8">
           {/* Detailed Info Card */}
-          <div className="bg-white p-10 rounded-[2.5rem] border border-border-light shadow-sm">
+          <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E7EB] shadow-sm">
             <h3 className="text-2xl font-black text-text-main mb-10 flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary">contact_page</span>
+              <span className="material-symbols-outlined text-[#8B5CF6]">contact_page</span>
               账户通讯详情
             </h3>
-
+ 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-2">
                 <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">教研联系邮箱</p>
-                <div className="flex items-center gap-4 p-5 bg-background-light/30 border border-border-light rounded-[1.5rem] group hover:border-primary/30 transition-all">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-border-light flex items-center justify-center text-primary shadow-sm group-hover:scale-105 transition-transform">
+                <div className="flex items-center gap-4 p-5 bg-background-light/30 border border-[#E5E7EB] rounded-[1.5rem] group hover:border-[#8B5CF6]/30 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#8B5CF6] shadow-sm group-hover:scale-105 transition-transform">
                     <span className="material-symbols-outlined">mail</span>
                   </div>
                   {isEditing ? (
@@ -410,8 +422,8 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
               </div>
               <div className="space-y-2">
                 <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">联系电话</p>
-                <div className="flex items-center gap-4 p-5 bg-background-light/30 border border-border-light rounded-[1.5rem] group hover:border-primary/30 transition-all">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-border-light flex items-center justify-center text-primary shadow-sm group-hover:scale-105 transition-transform">
+                <div className="flex items-center gap-4 p-5 bg-background-light/30 border border-[#E5E7EB] rounded-[1.5rem] group hover:border-[#8B5CF6]/30 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#E5E7EB] flex items-center justify-center text-[#8B5CF6] shadow-sm group-hover:scale-105 transition-transform">
                     <span className="material-symbols-outlined">call</span>
                   </div>
                   {isEditing ? (
@@ -430,19 +442,19 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
           </div>
 
           {/* Account Security Quick Links */}
-          <div className="bg-white p-10 rounded-[2.5rem] border border-border-light shadow-sm">
+          <div className="bg-white p-10 rounded-[2.5rem] border border-[#E5E7EB] shadow-sm">
             <h3 className="text-2xl font-black text-text-main mb-8 flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary">security</span>
+              <span className="material-symbols-outlined text-[#8B5CF6]">security</span>
               安全审计与账户偏好
             </h3>
-
+ 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <button
                 onClick={() => setIsPasswordModalOpen(true)}
-                className="flex items-center justify-between p-6 rounded-[2rem] bg-background-light/40 border border-border-light hover:bg-white hover:border-primary/40 hover:shadow-xl transition-all group"
+                className="flex items-center justify-between p-6 rounded-[2rem] bg-background-light/40 border border-[#E5E7EB] hover:bg-white hover:border-[#8B5CF6]/40 hover:shadow-xl transition-all group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-border-light flex items-center justify-center text-text-muted group-hover:text-primary transition-all group-hover:rotate-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#E5E7EB] flex items-center justify-center text-text-muted group-hover:text-[#8B5CF6] transition-all group-hover:rotate-6">
                     <span className="material-symbols-outlined">key</span>
                   </div>
                   <div className="text-left">
@@ -453,9 +465,9 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
                 <span className="material-symbols-outlined text-text-muted group-hover:translate-x-2 transition-transform">east</span>
               </button>
 
-              <button className="flex items-center justify-between p-6 rounded-[2rem] bg-background-light/40 border border-border-light hover:bg-white hover:border-primary/40 hover:shadow-xl transition-all group">
+              <button className="flex items-center justify-between p-6 rounded-[2rem] bg-background-light/40 border border-[#E5E7EB] hover:bg-white hover:border-[#8B5CF6]/40 hover:shadow-xl transition-all group">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-border-light flex items-center justify-center text-text-muted group-hover:text-amber-500 transition-all group-hover:rotate-6">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-[#E5E7EB] flex items-center justify-center text-text-muted group-hover:text-amber-500 transition-all group-hover:rotate-6">
                     <span className="material-symbols-outlined">notifications</span>
                   </div>
                   <div className="text-left">
@@ -474,9 +486,9 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-200 flex flex-col">
-            <div className="p-8 border-b border-border-light flex justify-between items-center bg-background-light/30">
+            <div className="p-8 border-b border-[#E5E7EB] flex justify-between items-center bg-background-light/30">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-[#8B5CF6]/10 text-[#8B5CF6] flex items-center justify-center">
                   <span className="material-symbols-outlined">lock_reset</span>
                 </div>
                 <div>
@@ -503,46 +515,46 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">当前密码</label>
                 <div className="relative group/input">
-                  <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-primary transition-colors">password</span>
+                  <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-[#8B5CF6] transition-colors">password</span>
                   <input
                     type="password"
                     autoComplete="current-password"
                     value={passwordForm.current}
                     onChange={e => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                    className="w-full bg-background-light/50 border border-border-light rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                    className="w-full bg-background-light/50 border border-[#E5E7EB] rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-[#8B5CF6]/10 focus:border-[#8B5CF6] transition-all"
                     placeholder="输入您的当前密码"
                   />
                 </div>
               </div>
 
-              <div className="h-px bg-border-light w-full"></div>
+              <div className="h-px bg-[#E5E7EB] w-full"></div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">新密码</label>
                   <div className="relative group/input">
-                    <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-primary transition-colors">key</span>
+                    <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-[#8B5CF6] transition-colors">key</span>
                     <input
                       type="password"
                       autoComplete="new-password"
                       value={passwordForm.new}
                       onChange={e => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                      className="w-full bg-background-light/50 border border-border-light rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full bg-background-light/50 border border-[#E5E7EB] rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-[#8B5CF6]/10 focus:border-[#8B5CF6] transition-all"
                       placeholder="输入至少 6 位新密码"
                     />
                   </div>
                 </div>
-
+ 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">确认新密码</label>
                   <div className="relative group/input">
-                    <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-primary transition-colors">verified</span>
+                    <span className="material-symbols-outlined absolute left-4 top-3.5 text-text-muted text-[20px] group-focus-within/input:text-[#8B5CF6] transition-colors">verified</span>
                     <input
                       type="password"
                       autoComplete="new-password"
                       value={passwordForm.confirm}
                       onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                      className="w-full bg-background-light/50 border border-border-light rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                      className="w-full bg-background-light/50 border border-[#E5E7EB] rounded-2xl pl-12 pr-4 py-3.5 text-sm font-bold outline-none focus:ring-4 focus:ring-[#8B5CF6]/10 focus:border-[#8B5CF6] transition-all"
                       placeholder="再次输入新密码"
                     />
                   </div>
@@ -553,14 +565,14 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
                 <button
                   type="button"
                   onClick={() => setIsPasswordModalOpen(false)}
-                  className="flex-1 py-4 border border-border-light rounded-2xl text-sm font-black text-text-muted hover:bg-background-light transition-all"
+                  className="flex-1 py-4 border border-[#E5E7EB] rounded-2xl text-sm font-black text-text-muted hover:bg-background-light transition-all"
                 >
                   取消
                 </button>
                 <button
                   type="submit"
                   disabled={isPasswordChanging}
-                  className="flex-1 py-4 bg-primary text-white rounded-2xl text-sm font-black shadow-xl shadow-primary/20 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                  className="flex-1 py-4 bg-[#8B5CF6] text-white rounded-2xl text-sm font-black shadow-xl shadow-[#8B5CF6]/30 hover:bg-violet-700 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
                 >
                   {isPasswordChanging ? (
                     <>

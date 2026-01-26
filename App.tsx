@@ -15,10 +15,12 @@ import MyProfile from './views/MyProfile';
 import Login from './views/Login';
 import { ViewState, User, UserRole } from './types';
 import { UserDatabase } from './db';
+import { useToast } from './components/ToastContext';
 
 const AUTH_STORAGE_KEY = 'helerix_auth_user_id';
 
 const App: React.FC = () => {
+  const { error } = useToast();
   const [currentView, setCurrentView] = useState<ViewState>('schedule');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedCertId, setSelectedCertId] = useState<string | null>(null);
@@ -70,7 +72,7 @@ const App: React.FC = () => {
     if (view === 'system-settings') {
       const isAdmin = currentUser?.roles.includes(UserRole.Admin);
       if (!isAdmin) {
-        alert("权限不足：系统设置仅对管理员开放");
+        error("权限不足：系统设置仅对管理员开放");
         return;
       }
     }
@@ -99,7 +101,7 @@ const App: React.FC = () => {
       case 'system-settings': return <SystemSettings />;
       case 'ai-exam-analysis': return <AIExamAnalysis />;
       case 'ai-critic': return <AICritic />;
-      case 'my-profile': return <MyProfile currentUser={currentUser} />;
+      case 'my-profile': return <MyProfile currentUser={currentUser} onUserUpdate={setCurrentUser} />;
       default: return <Schedule />;
     }
   };

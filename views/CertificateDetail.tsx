@@ -376,7 +376,7 @@ const CertificateDetail: React.FC<CertificateDetailProps> = ({ certId, onBack })
                     href={resolvedUrl || '#'} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex-1 md:flex-none px-12 py-4.5 bg-primary text-white rounded-2xl text-sm font-black hover:bg-violet-700 shadow-xl shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-95"
+                    className="flex-1 md:flex-none px-12 py-4.5 bg-[#8B5CF6] text-white rounded-2xl text-sm font-black hover:bg-violet-700 shadow-xl shadow-[#8B5CF6]/30 transition-all flex items-center justify-center gap-3 active:scale-95"
                   >
                     查看电子凭证 <span className="material-symbols-outlined text-[20px]">open_in_new</span>
                   </a>

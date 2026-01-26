@@ -132,12 +132,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Logo & Title */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm border border-white/10">
-                <img src={APP_LOGO} alt="Helerix" className="h-16 w-auto" />
+            <div className="flex justify-center mb-6">
+              <div className="bg-white/10 p-5 rounded-[2rem] backdrop-blur-md border border-white/20 shadow-2xl ring-8 ring-white/5 group hover:rotate-3 transition-transform duration-500">
+                <img src={APP_LOGO} alt="Helerix" className="h-20 w-auto filter drop-shadow-2xl" />
               </div>
             </div>
-            <h1 className="text-2xl font-black text-white mb-2">
+            <h1 className="text-3xl font-black text-white mb-2 tracking-tight">
               {authMode === 'register' ? (users.length === 0 ? '创建管理员账户' : '注册新账户') : '欢迎回来'}
             </h1>
             <p className="text-white/60 text-sm">
