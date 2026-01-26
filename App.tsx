@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import UserList from './views/UserList';
@@ -97,7 +99,7 @@ const App: React.FC = () => {
       case 'system-settings': return <SystemSettings />;
       case 'ai-exam-analysis': return <AIExamAnalysis />;
       case 'ai-critic': return <AICritic />;
-      case 'my-profile': return <MyProfile />;
+      case 'my-profile': return <MyProfile currentUser={currentUser} />;
       default: return <Schedule />;
     }
   };
@@ -120,7 +122,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background-light">
+    <div className="flex h-screen overflow-hidden bg-[#F5F7FA]">
       <Sidebar 
         currentView={currentView} 
         onNavigate={handleNavigate} 
@@ -128,7 +130,7 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 no-scrollbar">
+        <main className="flex-1 overflow-y-auto p-8 no-scrollbar">
           {renderView()}
         </main>
       </div>

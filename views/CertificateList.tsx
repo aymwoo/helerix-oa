@@ -313,6 +313,57 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     setAiAttachments(newAttachments);
   };
 
+  // ========== Camera Functions ==========
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setCameraStream(stream);
+      setIsCameraOpen(true);
+      setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      }, 100);
+    } catch (err) {
+      alert("无法访问摄像头，请检查权限 (需 HTTPS 或 localhost)。");
+      console.error(err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setIsCameraOpen(false);
+  };
+
+  const takePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const base64 = await blobToBase64(blob);
+          setAiAttachments(prev => [...prev, {
+            type: 'image',
+            data: base64,
+            name: `camera_capture_${Date.now()}.jpg`
+          }]);
+        }
+      }, 'image/jpeg');
+    }
+    stopCamera();
+  };
+
   const closeAIModal = () => {
     setIsAIModalOpen(false);
     setAiAttachments([]);
@@ -468,7 +519,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
   const getSortIcon = (columnKey: keyof Certificate) => {
     if (sortConfig.key !== columnKey) return <span className="material-symbols-outlined text-[16px] opacity-30">arrow_drop_down</span>;
-    return <span className="material-symbols-outlined text-[16px] text-primary">{sortConfig.direction === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</span>;
+    return <span className="material-symbols-outlined text-[16px] text-[#8B5CF6]">{sortConfig.direction === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</span>;
   };
 
   if (isLoading && certificates.length === 0) {
@@ -484,18 +535,18 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     <div className="space-y-6 animate-in fade-in duration-500 pb-24 relative min-h-full">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-text-main">证书登记</h1>
+          <h1 className="text-3xl font-bold text-text-main">证书管理</h1>
           <p className="text-text-muted text-sm mt-1">记录并管理您的获奖荣誉、课题结项、培训结业及职称资质。</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={() => setShowPromptSettings(!showPromptSettings)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold border transition-all active:scale-95 ${showPromptSettings ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white text-text-muted border-border-light hover:bg-background-light'}`}
+            className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold border transition-all active:scale-95 ${showPromptSettings ? 'bg-[#8B5CF6] text-white border-[#8B5CF6] shadow-lg shadow-[#8B5CF6]/20' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-background-light'}`}
           >
             <span className="material-symbols-outlined text-[20px]">psychology</span>
             AI 录入指令
           </button>
-          <button onClick={() => { setEditingCertId(null); setIsModalOpen(true); }} className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-violet-600 px-6 py-2.5 text-white shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-95">
+          <button onClick={() => { setEditingCertId(null); setIsModalOpen(true); }} className="flex items-center gap-2 rounded-lg bg-[#8B5CF6] px-6 py-2.5 text-white shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-all active:scale-95">
             <span className="material-symbols-outlined text-[20px]">add_task</span>
             <span className="text-sm font-bold">登记新成果</span>
           </button>
@@ -511,21 +562,21 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
       {/* Module-specific Prompt Settings */}
       {showPromptSettings && (
-        <div className="bg-white rounded-[2rem] border border-border-light shadow-xl overflow-hidden animate-in slide-in-from-top-4 duration-300 p-8 space-y-6">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden animate-in slide-in-from-top-4 duration-300 p-8 space-y-6">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-black text-text-main flex items-center gap-2 mb-1">
-                <span className="material-symbols-outlined text-primary">auto_fix</span>
-                荣誉档案录入 Prompt 指令集
+              <h3 className="text-lg font-semibold text-text-main flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-[#8B5CF6]">auto_fix</span>
+                证书识别录入 Prompt 指令集
               </h3>
               <p className="text-xs text-text-muted font-medium">定制 AI 对荣誉档案的 OCR 提取规则，修改将仅影响“证书登记”模块。</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>
+              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-widest">选择预设:</span>
               <select
                 value={selectedPromptId}
                 onChange={(e) => handlePromptChange(e.target.value)}
-                className="text-xs font-black bg-background-light border border-border-light rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+                className="text-xs font-semibold bg-background-light border border-[#E5E7EB] rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 min-w-[160px]"
               >
                 {prompts.map(p => (
                   <option key={p.id} value={p.id}>{p.name}{p.id.length < 10 ? ' (内置)' : ''}</option>
@@ -538,13 +589,13 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
             <textarea
               value={editingPrompt}
               onChange={(e) => setEditingPrompt(e.target.value)}
-              className="w-full h-32 bg-background-light/30 border border-border-light rounded-2xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-primary/20 outline-none resize-none no-scrollbar shadow-inner"
+              className="w-full h-32 bg-background-light/30 border border-[#E5E7EB] rounded-xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none resize-none no-scrollbar shadow-inner"
               placeholder="输入 AI 档案录入指令..."
             />
             <div className="absolute bottom-4 right-4 flex gap-2">
               <button
                 onClick={saveNewPromptVersion}
-                className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
+                className="px-4 py-2 bg-[#8B5CF6] text-white rounded-lg text-[10px] font-semibold hover:bg-violet-700 shadow-lg shadow-[#8B5CF6]/20 transition-all flex items-center gap-1.5 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">save</span>
                 另存为新版本
@@ -554,10 +605,10 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 rounded-xl bg-white p-4 shadow-sm border border-border-light sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm border border-[#E5E7EB] sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"><span className="material-symbols-outlined text-[20px]">search</span></div>
-          <input className="h-10 w-full rounded-lg border border-border-light bg-background-light pl-10 pr-4 text-sm focus:border-primary outline-none transition-all" placeholder="搜索证书名称、级别、类别..." type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <input className="h-10 w-full rounded-lg border border-[#E5E7EB] bg-background-light pl-10 pr-4 text-sm focus:border-[#8B5CF6] outline-none transition-all" placeholder="搜索证书名称、级别、类别..." type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2">
           <span className="text-xs font-bold text-text-muted px-2 py-1">筛选级别:</span>
@@ -567,14 +618,14 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border-light bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-[#E5E7EB] bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="border-b bg-background-light/50">
             <tr>
               <th className="px-6 py-4 w-4">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 accent-primary cursor-pointer rounded"
+                  className="w-4 h-4 accent-[#8B5CF6] cursor-pointer rounded"
                   checked={displayCertificates.length > 0 && selectedIds.size === displayCertificates.length}
                   onChange={toggleSelectAll}
                 />
@@ -589,18 +640,18 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
           </thead>
           <tbody className="divide-y">
             {displayCertificates.map((cert) => (
-              <tr key={cert.id} className={`group transition-colors cursor-pointer ${selectedIds.has(cert.id) ? 'bg-primary/5' : 'hover:bg-background-light/50'}`} onClick={(e) => toggleSelect(e, cert.id)}>
+              <tr key={cert.id} className={`group transition-colors cursor-pointer ${selectedIds.has(cert.id) ? 'bg-[#8B5CF6]/5' : 'hover:bg-background-light/50'}`} onClick={(e) => toggleSelect(e, cert.id)}>
                 <td className="px-6 py-4">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 accent-primary rounded cursor-pointer"
+                    className="w-4 h-4 accent-[#8B5CF6] rounded cursor-pointer"
                     checked={selectedIds.has(cert.id)}
                     readOnly
                   />
                 </td>
                 <td className="px-6 py-4 font-bold text-text-main">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary"><span className="material-symbols-outlined text-[20px]">award_star</span></div>
+                    <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/5 flex items-center justify-center text-[#8B5CF6]"><span className="material-symbols-outlined text-[20px]">award_star</span></div>
                     {cert.name}
                   </div>
                 </td>
@@ -610,7 +661,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 </td>
                 <td className="px-6 py-4">
                   {cert.hours ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-black border border-blue-100">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold border border-blue-100">
                       {cert.hours} h
                     </span>
                   ) : (
@@ -620,7 +671,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 <td className="px-6 py-4 text-text-muted font-mono">{cert.issueDate}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-text-muted hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); onCertSelect(cert.id); }} title="查看详情"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
+                    <button className="p-1.5 text-text-muted hover:text-[#8B5CF6] transition-colors" onClick={(e) => { e.stopPropagation(); onCertSelect(cert.id); }} title="查看详情"><span className="material-symbols-outlined text-[20px]">visibility</span></button>
                     <button className="p-1.5 text-text-muted hover:text-amber-600 transition-colors" onClick={(e) => handleEditClick(e, cert)} title="编辑"><span className="material-symbols-outlined text-[20px]">edit</span></button>
                     <button className="p-1.5 text-text-muted hover:text-red-600 transition-colors" onClick={(e) => handleDeleteClick(e, cert.id)} title="删除"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                   </div>
@@ -640,9 +691,9 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       {/* Bulk actions float bar */}
       {selectedIds.size > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] animate-in fade-in slide-in-from-bottom-8 duration-300">
-          <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10">
+          <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-6 border border-white/10">
             <div className="flex items-center gap-3 pr-6 border-r border-white/20">
-              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-bold shadow-inner">
+              <div className="w-8 h-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-sm font-bold shadow-inner">
                 {selectedIds.size}
               </div>
               <span className="text-sm font-medium tracking-wide">项已选中</span>
@@ -651,7 +702,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setDeleteConfirmation({ isOpen: true, certId: null, isBatch: true })}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-xl transition-all font-bold text-sm shadow-lg shadow-red-500/20 active:scale-95"
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all font-bold text-sm shadow-lg shadow-red-500/20 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
                 批量删除
@@ -659,7 +710,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
               <button
                 onClick={clearSelection}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all font-bold text-sm active:scale-95"
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all font-bold text-sm active:scale-95"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
                 取消选择
@@ -671,7 +722,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200">
             <div className="px-6 py-5 border-b flex justify-between items-center bg-background-light/30">
               <h3 className="text-xl font-bold text-text-main">{editingCertId ? '编辑荣誉成果' : '登记荣誉成果'}</h3>
               <button onClick={closeModal} className="text-text-muted hover:text-text-main p-1"><span className="material-symbols-outlined">close</span></button>
@@ -679,22 +730,22 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
             <div className="p-6 overflow-y-auto space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-bold">成果名称 <span className="text-red-500">*</span></label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="例如：2023年度省级教学能手" />
+                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all" placeholder="例如：2023年度省级教学能手" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-bold">颁发/主管单位 <span className="text-red-500">*</span></label>
-                <input type="text" value={formData.issuer} onChange={(e) => setFormData({ ...formData, issuer: e.target.value })} className="w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all" placeholder="例如：省教育厅" />
+                <input type="text" value={formData.issuer} onChange={(e) => setFormData({ ...formData, issuer: e.target.value })} className="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all" placeholder="例如：省教育厅" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">荣誉级别</label>
-                  <select value={formData.level} onChange={(e) => setFormData({ ...formData, level: e.target.value as HonorLevel })} className="w-full px-4 py-2.5 border rounded-xl text-sm outline-none bg-white transition-all">
+                  <select value={formData.level} onChange={(e) => setFormData({ ...formData, level: e.target.value as HonorLevel })} className="w-full px-4 py-2.5 border rounded-lg text-sm outline-none bg-white transition-all">
                     {Object.values(HonorLevel).map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold text-text-main">成果类别</label>
-                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value as CertificateCategory })} className="w-full px-4 py-2.5 border rounded-xl text-sm outline-none bg-white transition-all">
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value as CertificateCategory })} className="w-full px-4 py-2.5 border rounded-lg text-sm outline-none bg-white transition-all">
                     {Object.values(CertificateCategory).map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
@@ -702,7 +753,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold">取得日期 <span className="text-red-500">*</span></label>
-                  <input type="date" value={formData.issueDate} onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} className="w-full px-4 py-2.5 border rounded-xl outline-none text-sm transition-all" />
+                  <input type="date" value={formData.issueDate} onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} className="w-full px-4 py-2.5 border rounded-lg outline-none text-sm transition-all" />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-bold">获得学时 (仅限培训类)</label>
@@ -712,7 +763,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                       min="0"
                       value={formData.hours}
                       onChange={(e) => setFormData({ ...formData, hours: parseInt(e.target.value) || 0 })}
-                      className="w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      className="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all"
                       placeholder="0"
                     />
                     <span className="absolute right-4 top-2.5 text-xs text-text-muted font-bold">h</span>
@@ -730,10 +781,10 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                     type="url"
                     value={formData.credentialUrl}
                     onChange={(e) => setFormData({ ...formData, credentialUrl: e.target.value })}
-                    className="flex-1 px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    className="flex-1 px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-[#8B5CF6]/20 outline-none transition-all"
                     placeholder="https://... 或点击右侧按钮上传"
                   />
-                  <label className={`flex items-center justify-center w-12 border border-dashed rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all text-primary ${isUploading ? 'opacity-50 cursor-wait' : ''}`} title="上传本地文档">
+                  <label className={`flex items-center justify-center w-12 border border-dashed rounded-lg cursor-pointer hover:bg-[#8B5CF6]/5 hover:border-[#8B5CF6] transition-all text-[#8B5CF6] ${isUploading ? 'opacity-50 cursor-wait' : ''}`} title="上传本地文档">
                     <span className={`material-symbols-outlined text-[22px] ${isUploading ? 'animate-spin' : ''}`}>{isUploading ? 'sync' : 'upload_file'}</span>
                     <input
                       type="file"
@@ -747,8 +798,8 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               </div>
             </div>
             <div className="px-6 py-5 border-t bg-background-light/20 flex justify-end gap-3">
-              <button onClick={closeModal} className="px-6 py-2.5 border rounded-xl text-text-muted font-bold text-sm hover:bg-white transition-colors">取消</button>
-              <button onClick={handleSaveCertificate} disabled={isUploading} className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-50">
+              <button onClick={closeModal} className="px-6 py-2.5 border rounded-lg text-text-muted font-bold text-sm hover:bg-white transition-colors">取消</button>
+              <button onClick={handleSaveCertificate} disabled={isUploading} className="px-6 py-2.5 bg-[#8B5CF6] text-white rounded-lg font-bold text-sm shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-all active:scale-95 disabled:opacity-50">
                 {editingCertId ? '保存修改' : '提交登记'}
               </button>
             </div>
@@ -759,10 +810,10 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       {/* AI Import Modal */}
       {isAIModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200">
+          <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in duration-200">
             <div className="px-6 py-5 border-b flex justify-between items-center bg-gradient-to-r from-amber-50 to-orange-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg flex items-center justify-center text-white shadow-lg">
                   <span className="material-symbols-outlined">auto_awesome</span>
                 </div>
                 <div>
@@ -775,14 +826,14 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
               {/* Provider Selector */}
-              <div className="flex items-center gap-4 p-4 bg-background-light rounded-xl border border-border-light">
-                <span className="material-symbols-outlined text-primary">cloud</span>
+              <div className="flex items-center gap-4 p-4 bg-background-light rounded-lg border border-[#E5E7EB]">
+                <span className="material-symbols-outlined text-[#8B5CF6]">cloud</span>
                 <div className="flex-1">
                   <label className="text-xs font-bold text-text-muted uppercase">AI 引擎</label>
                   <select
                     value={selectedProviderId}
                     onChange={(e) => setSelectedProviderId(e.target.value)}
-                    className="w-full bg-white border border-border-light rounded-lg px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 mt-1"
+                    className="w-full bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 mt-1"
                   >
                     {!customProviders.length && <option value="">无可用模型，请先去系统设置添加</option>}
                     {customProviders.map(p => (
@@ -793,39 +844,80 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               </div>
 
               {/* Upload Area */}
-              <div
-                ref={pasteAreaRef}
-                onPaste={handlePaste}
-                className="border-2 border-dashed border-border-light rounded-2xl p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer focus-within:border-primary focus-within:bg-primary/5"
-                onClick={() => aiFileInputRef.current?.click()}
-                tabIndex={0}
-              >
-                <input
-                  type="file"
-                  ref={aiFileInputRef}
-                  className="hidden"
-                  accept="image/*,application/pdf"
-                  multiple
-                  onChange={handleAIFileSelect}
-                />
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-                    <span className="material-symbols-outlined text-4xl text-primary">cloud_upload</span>
+              {/* Upload Area or Camera View */}
+              {isCameraOpen ? (
+                <div className="relative rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center border-2 border-[#8B5CF6] shadow-lg animate-in fade-in zoom-in duration-300">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover"></video>
+                  <canvas ref={canvasRef} className="hidden"></canvas>
+                  
+                  <div className="absolute bottom-6 flex gap-6 z-10">
+                    <button 
+                      onClick={stopCamera} 
+                      className="px-6 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold hover:bg-white/30 transition-all"
+                    >
+                      取消
+                    </button>
+                    <button 
+                      onClick={takePhoto} 
+                      className="w-16 h-16 rounded-full bg-white border-4 border-[#8B5CF6]/50 shadow-[0_0_20px_rgba(139,92,246,0.5)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                      title="拍摄照片"
+                    >
+                       <div className="w-12 h-12 rounded-full bg-[#8B5CF6]"></div>
+                    </button>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-text-main">点击上传或拖拽文件到此处</p>
-                    <p className="text-xs text-text-muted mt-1">也可以直接 <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-mono border">Ctrl+V</kbd> 粘贴图片</p>
+                  
+                  <div className="absolute top-4 right-4 bg-red-500/80 text-white text-[10px] px-2 py-0.5 rounded animate-pulse">
+                    REC
                   </div>
-                  <p className="text-[10px] text-text-muted">支持 JPG、PNG、PDF 格式</p>
                 </div>
-              </div>
+              ) : (
+                <div
+                  ref={pasteAreaRef}
+                  onPaste={handlePaste}
+                  className="border-2 border-dashed border-[#E5E7EB] rounded-xl p-8 text-center hover:border-[#8B5CF6]/50 hover:bg-[#8B5CF6]/5 transition-all cursor-pointer focus-within:border-[#8B5CF6] focus-within:bg-[#8B5CF6]/5 group relative"
+                  onClick={() => aiFileInputRef.current?.click()}
+                  tabIndex={0}
+                >
+                  <input
+                    type="file"
+                    ref={aiFileInputRef}
+                    className="hidden"
+                    accept="image/*,application/pdf"
+                    multiple
+                    onChange={handleAIFileSelect}
+                  />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-[#8B5CF6]/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <span className="material-symbols-outlined text-4xl text-[#8B5CF6]">cloud_upload</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-text-main">点击上传或拖拽证书图片/PDF</p>
+                      <p className="text-xs text-text-muted mt-1">支持 Ctrl+V 粘贴内容</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 w-full justify-center">
+                       <span className="h-px bg-gray-200 w-12"></span>
+                       <span className="text-[10px] text-text-muted">或者</span>
+                       <span className="h-px bg-gray-200 w-12"></span>
+                    </div>
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); startCamera(); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E7EB] rounded-lg text-xs font-bold text-text-main shadow-sm hover:bg-[#8B5CF6] hover:text-white hover:border-[#8B5CF6] transition-all active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">photo_camera</span>
+                      调用摄像头拍照
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Attachments Preview */}
               {aiAttachments.length > 0 && (
                 <div className="flex flex-wrap gap-3">
                   {aiAttachments.map((att, idx) => (
                     <div key={idx} className="relative group">
-                      <div className="h-20 w-24 bg-background-light border border-border-light rounded-xl flex flex-col items-center justify-center gap-1 overflow-hidden">
+                      <div className="h-20 w-24 bg-background-light border border-[#E5E7EB] rounded-lg flex flex-col items-center justify-center gap-1 overflow-hidden">
                         {att.type === 'image' ? (
                           <img src={`data:image/jpeg;base64,${att.data}`} alt={att.name} className="w-full h-full object-cover" />
                         ) : (
@@ -848,7 +940,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
               {/* Error Message */}
               {aiError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in slide-in-from-top-2">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 animate-in slide-in-from-top-2">
                   <span className="material-symbols-outlined text-red-500">error</span>
                   <div>
                     <p className="text-sm font-bold text-red-700">识别失败</p>
@@ -866,7 +958,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                   </div>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                     {aiPreviewData.map((cert, idx) => (
-                      <div key={idx} className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                      <div key={idx} className="p-4 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <h5 className="font-bold text-text-main truncate">{cert.name}</h5>
@@ -896,12 +988,12 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 提示词可在"系统设置 → 提示词工程"中自定义
               </p>
               <div className="flex gap-3">
-                <button onClick={closeAIModal} className="px-6 py-2.5 border rounded-xl text-text-muted font-bold text-sm hover:bg-white transition-colors">取消</button>
+                <button onClick={closeAIModal} className="px-6 py-2.5 border rounded-lg text-text-muted font-bold text-sm hover:bg-white transition-colors">取消</button>
                 {aiPreviewData.length > 0 ? (
                   <button
                     onClick={confirmAIImport}
                     disabled={isLoading}
-                    className="px-6 py-2.5 bg-green-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-green-500/20 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-2.5 bg-green-500 text-white rounded-lg font-bold text-sm shadow-lg shadow-green-500/20 hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">check</span>
                     确认导入 {aiPreviewData.length} 条
@@ -910,7 +1002,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                   <button
                     onClick={processAIImport}
                     disabled={isAIProcessing || aiAttachments.length === 0}
-                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg font-bold text-sm shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {isAIProcessing ? (
                       <>

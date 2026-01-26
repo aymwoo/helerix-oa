@@ -192,18 +192,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                             <img
                               src={user.avatarUrl}
                               alt={user.name}
-                              className="w-10 h-10 rounded-full border-2 border-white/20 group-hover:border-violet-400 transition-colors"
+                              className="w-10 h-10 rounded-full border-2 border-white/20 group-hover:border-primary transition-colors"
                             />
                             <div className="flex-1 text-left">
                               <div className="flex items-center gap-2">
-                                <p className="text-white font-bold text-sm group-hover:text-violet-300 transition-colors">{user.name}</p>
+                                <p className="text-white font-bold text-sm group-hover:text-primary transition-colors">{user.name}</p>
                                 {user.roles.includes(UserRole.Admin) && (
                                   <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 text-[9px] font-black rounded uppercase">管理员</span>
                                 )}
                               </div>
                               <p className="text-white/40 text-xs truncate">{user.email}</p>
                             </div>
-                            <span className="material-symbols-outlined text-white/20 group-hover:text-violet-400 transition-colors">arrow_forward</span>
+                            <span className="material-symbols-outlined text-white/20 group-hover:text-primary transition-colors">arrow_forward</span>
                           </button>
                         ))}
                       </div>
@@ -222,7 +222,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         value={email}
                         onChange={(e) => { setEmail(e.target.value); setError(null); }}
                         placeholder="name@example.com"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                       />
                     </div>
                   </div>
@@ -236,7 +236,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-gradient-to-r from-primary to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:from-primary/90 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-xl">login</span>
                     登录系统
@@ -249,7 +249,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <p className="text-white/40 text-sm mb-3">还没有账户？</p>
                 <button
                   onClick={() => { setAuthMode('register'); setError(null); }}
-                  className="text-violet-400 font-bold text-sm hover:text-violet-300 transition-colors"
+                  className="text-primary font-bold text-sm hover:text-primary/80 transition-colors"
                 >
                   立即注册 →
                 </button>
@@ -274,7 +274,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     value={regName}
                     onChange={(e) => { setRegName(e.target.value); setError(null); }}
                     placeholder="请输入您的姓名"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -288,7 +288,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     value={regEmail}
                     onChange={(e) => { setRegEmail(e.target.value); setError(null); }}
                     placeholder="name@example.com"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -302,7 +302,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     value={regDepartment}
                     onChange={(e) => setRegDepartment(e.target.value)}
                     placeholder="例如：数学教研组"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/20 transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
                   />
                 </div>
               </div>
@@ -314,7 +314,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <select
                     value={regRole}
                     onChange={(e) => setRegRole(e.target.value as UserRole)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white outline-none focus:border-violet-400/50 focus:ring-2 focus:ring-violet-400/20 transition-all appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
                   >
                     {availableRoles.map(role => (
                       <option key={role} value={role} className="bg-slate-900 text-white">{role}</option>
@@ -334,7 +334,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <button
                 type="submit"
                 disabled={isRegistering}
-                className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:from-violet-500 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-gradient-to-r from-primary to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:from-primary/90 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isRegistering ? (
                   <>
@@ -356,7 +356,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <button
                     type="button"
                     onClick={() => { setAuthMode('login'); setError(null); }}
-                    className="text-violet-400 font-bold text-sm hover:text-violet-300 transition-colors"
+                    className="text-primary font-bold text-sm hover:text-primary/80 transition-colors"
                   >
                     ← 返回登录
                   </button>

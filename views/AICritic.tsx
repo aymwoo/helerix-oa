@@ -294,7 +294,7 @@ const AICritic: React.FC = () => {
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in duration-500 pb-2 relative">
       {/* Intro Header */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-[2rem] p-8 text-white shadow-2xl shrink-0 relative overflow-hidden group">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-8 text-white shadow-2xl shrink-0 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125 duration-1000"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-6">
@@ -305,7 +305,7 @@ const AICritic: React.FC = () => {
               <span className="material-symbols-outlined text-4xl text-red-400">{showHistory ? 'close' : 'history'}</span>
             </button>
             <div>
-              <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
+              <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-3">
                 AI 批评者
                 {currentSessionId && <span className="text-xs font-bold bg-white/10 px-2 py-0.5 rounded border border-white/10 text-slate-400">正在进行</span>}
               </h2>
@@ -369,8 +369,8 @@ const AICritic: React.FC = () => {
 
         {/* History Sidebar */}
         {showHistory && (
-          <div className="w-72 bg-white/80 backdrop-blur-md rounded-[2.5rem] border border-border-light shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-left-4 duration-300 z-30 absolute md:relative h-full">
-            <div className="p-6 border-b border-border-light flex justify-between items-center">
+          <div className="w-72 bg-white/80 backdrop-blur-md rounded-xl border border-[#E5E7EB] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-left-4 duration-300 z-30 absolute md:relative h-full">
+            <div className="p-6 border-b border-[#E5E7EB] flex justify-between items-center">
               <h3 className="font-bold text-text-main flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">forum</span>
                 历史批评记录
@@ -407,7 +407,7 @@ const AICritic: React.FC = () => {
         )}
 
         {/* Chat Window */}
-        <div className="flex-1 bg-white rounded-[2.5rem] border border-border-light shadow-sm overflow-hidden flex flex-col relative">
+        <div className="flex-1 bg-white rounded-xl border border-[#E5E7EB] shadow-sm overflow-hidden flex flex-col relative">
 
           {/* Messages List */}
           <div className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth no-scrollbar">
@@ -425,7 +425,7 @@ const AICritic: React.FC = () => {
                   {msg.attachments && msg.attachments.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-1 justify-end">
                       {msg.attachments.map((att, idx) => (
-                        <div key={idx} className="bg-background-light border border-border-light rounded-xl p-2 flex items-center gap-2 text-xs font-bold text-text-muted">
+                        <div key={idx} className="bg-background-light border border-[#E5E7EB] rounded-xl p-2 flex items-center gap-2 text-xs font-bold text-text-muted">
                           <span className="material-symbols-outlined text-sm">{att.type === 'pdf' ? 'picture_as_pdf' : 'image'}</span>
                           <span className="max-w-[150px] truncate">{att.name}</span>
                         </div>
@@ -436,7 +436,7 @@ const AICritic: React.FC = () => {
                   <div className={`px-6 py-4 rounded-3xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm
                                   ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm' :
                       msg.isError ? 'bg-red-50 text-red-600 border border-red-100 rounded-tl-sm' :
-                        'bg-background-light text-text-main border border-border-light rounded-tl-sm font-medium'}`}
+                        'bg-background-light text-text-main border border-[#E5E7EB] rounded-tl-sm font-medium'}`}
                   >
                     {msg.text || (isTyping && msg.role === 'model' && !msg.text ? "..." : "")}
                   </div>
@@ -448,7 +448,7 @@ const AICritic: React.FC = () => {
                 <div className="w-10 h-10 rounded-full bg-slate-800 text-red-400 border border-slate-700 shrink-0 flex items-center justify-center shadow-sm">
                   <span className="material-symbols-outlined text-[20px] animate-spin">sync</span>
                 </div>
-                <div className="px-6 py-4 bg-background-light border border-border-light rounded-3xl rounded-tl-sm text-sm text-text-muted flex items-center gap-1">
+                <div className="px-6 py-4 bg-background-light border border-[#E5E7EB] rounded-3xl rounded-tl-sm text-sm text-text-muted flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce"></span>
                   <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce delay-100"></span>
                   <span className="w-1.5 h-1.5 bg-text-muted rounded-full animate-bounce delay-200"></span>
@@ -459,12 +459,12 @@ const AICritic: React.FC = () => {
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-white border-t border-border-light">
+          <div className="p-4 bg-white border-t border-[#E5E7EB]">
             {attachments.length > 0 && (
               <div className="flex gap-2 mb-3 overflow-x-auto pb-2 px-2">
                 {attachments.map((att, idx) => (
                   <div key={idx} className="relative group shrink-0">
-                    <div className="h-16 px-3 bg-background-light border border-border-light rounded-xl flex flex-col items-center justify-center gap-1 min-w-[80px]">
+                    <div className="h-16 px-3 bg-background-light border border-[#E5E7EB] rounded-xl flex flex-col items-center justify-center gap-1 min-w-[80px]">
                       <span className="material-symbols-outlined text-primary">{att.type === 'pdf' ? 'picture_as_pdf' : 'image'}</span>
                       <span className="text-[9px] text-text-muted font-bold truncate w-full text-center">{att.name}</span>
                     </div>
@@ -476,7 +476,7 @@ const AICritic: React.FC = () => {
               </div>
             )}
 
-            <div className="flex gap-3 items-end bg-background-light rounded-[2rem] p-2 border border-border-light focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
+            <div className="flex gap-3 items-end bg-background-light rounded-xl p-2 border border-[#E5E7EB] focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all shadow-sm">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="p-3 text-text-muted hover:text-primary hover:bg-white rounded-full transition-colors shrink-0"

@@ -1,13 +1,17 @@
 
+'use client';
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Certificate, HonorLevel } from '../types';
 import { CertificateDatabase, FileManager } from '../db';
 
-// Using react-pdf via esm.sh for PDF preview functionality
-import { pdfjs, Document, Page } from 'https://esm.sh/react-pdf@9.1.1';
+// Using react-pdf via local package
+import { pdfjs, Document, Page } from 'react-pdf';
 
 // Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (pdfjs) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+}
 
 interface CertificateDetailProps {
   certId: string;

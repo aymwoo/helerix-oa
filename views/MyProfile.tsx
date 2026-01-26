@@ -1,4 +1,6 @@
 
+'use client';
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, UserRole, ExamAnalysis, ScheduleEvent, Certificate, CertificateCategory } from '../types';
 import { UserDatabase, ExamAnalysisDatabase, EventsDatabase, CertificateDatabase, FileManager } from '../db';
@@ -13,10 +15,14 @@ interface ActivityItem {
   subtitle?: string;
 }
 
-const MyProfile: React.FC = () => {
+interface MyProfileProps {
+  currentUser: User | null;
+}
+
+const MyProfile: React.FC<MyProfileProps> = ({ currentUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [profile, setProfile] = useState<User | null>(null);
+  const [profile, setProfile] = useState<User | null>(currentUser);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [stats, setStats] = useState({
     examCount: 0,
@@ -36,16 +42,21 @@ const MyProfile: React.FC = () => {
   const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'error' | 'success', message: string } | null>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const CURRENT_USER_ID = "1";
 
   useEffect(() => {
     const loadProfileData = async () => {
+      if (!currentUser) return;
+      
       setIsLoading(true);
       try {
         await UserDatabase.initialize();
-        const user = await UserDatabase.getById(CURRENT_USER_ID);
+        // Always verify user exists in DB
+        const user = await UserDatabase.getById(currentUser.id);
         if (user) {
           setProfile(user);
+        } else {
+           // Fallback to prop if DB fails or user not found (e.g. new session)
+           setProfile(currentUser);
         }
 
         // Load real stats and activities
@@ -121,7 +132,7 @@ const MyProfile: React.FC = () => {
       }
     };
     loadProfileData();
-  }, []);
+  }, [currentUser]);
 
   const handleSave = async () => {
     if (!profile) return;

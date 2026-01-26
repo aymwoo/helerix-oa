@@ -349,18 +349,18 @@ const Schedule: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 h-full flex flex-col relative">
       {/* Header & Toolbar */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-[2rem] shadow-sm border border-border-light shrink-0 select-none">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 bg-white p-6 rounded-xl shadow border border-[#E5E7EB] shrink-0 select-none">
          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-background-light p-1.5 rounded-2xl border border-border-light">
-                <button onClick={handlePrevMonth} className="p-2 hover:bg-white rounded-xl shadow-sm transition-all"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
+            <div className="flex items-center gap-2 bg-background-light p-1.5 rounded-2xl border border-[#E5E7EB]">
+                <button onClick={handlePrevMonth} className="p-2 hover:bg-white rounded-lg shadow-sm transition-all"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
                 <div className="px-4 text-center min-w-[120px]">
                     <span className="block text-sm font-black text-text-main">{year}年</span>
                     <span className="block text-lg font-black text-primary">{month + 1}月</span>
                 </div>
-                <button onClick={handleNextMonth} className="p-2 hover:bg-white rounded-xl shadow-sm transition-all"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
+                <button onClick={handleNextMonth} className="p-2 hover:bg-white rounded-lg shadow-sm transition-all"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
             </div>
             <div>
-                <h1 className="text-2xl font-bold text-text-main">教研排期</h1>
+                <h1 className="text-2xl font-semibold text-text-main">教研排期</h1>
                 <p className="text-xs text-text-muted mt-1">按住 <kbd className="font-mono bg-gray-100 px-1 rounded border">Ctrl</kbd> 或 <kbd className="font-mono bg-gray-100 px-1 rounded border">Shift</kbd> 可批量选择日期，双击日期查看详情。</p>
             </div>
          </div>
@@ -368,7 +368,7 @@ const Schedule: React.FC = () => {
          <div className="flex items-center gap-3">
              <button 
                 onClick={() => setShowAvailableOnly(!showAvailableOnly)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all border ${showAvailableOnly ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-200' : 'bg-white text-text-muted border-border-light hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-xs font-semibold transition-all border ${showAvailableOnly ? 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-200' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-gray-50'}`}
              >
                  <span className="material-symbols-outlined text-[18px]">{showAvailableOnly ? 'check_circle' : 'filter_alt'}</span>
                  仅显示可安排日期
@@ -376,7 +376,7 @@ const Schedule: React.FC = () => {
              
              <button 
                 onClick={() => setExcludeWeekends(!excludeWeekends)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all border ${excludeWeekends ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white text-text-muted border-border-light hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg text-xs font-semibold transition-all border ${excludeWeekends ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-gray-50'}`}
              >
                  <span className="material-symbols-outlined text-[18px]">{excludeWeekends ? 'event_busy' : 'weekend'}</span>
                  {excludeWeekends ? '已排除周末' : '包含周末'}
@@ -385,7 +385,7 @@ const Schedule: React.FC = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className={`flex-1 overflow-y-auto bg-white rounded-[2rem] border border-border-light shadow-sm p-6 ${showAvailableOnly ? 'bg-green-50/30' : ''} select-none`}>
+      <div className={`flex-1 overflow-y-auto bg-white rounded-lg border border-[#E5E7EB] shadow p-6 ${showAvailableOnly ? 'bg-green-50/30' : ''} select-none`}>
          {/* Weekday Headers */}
          <div className={`grid mb-4 ${excludeWeekends ? 'grid-cols-5' : 'grid-cols-7'}`}>
             {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map((day, index) => {
@@ -407,7 +407,8 @@ const Schedule: React.FC = () => {
                 
                 const hasEvents = item.events && item.events.length > 0;
                 const isBusySlot = hasEvents;
-                const isSelected = selectedDates.has(item.dateStr);
+                const dayItem = item as { dateStr: string; day: number; events: any[]; type: string; isToday: boolean };
+                const isSelected = selectedDates.has(dayItem.dateStr);
 
                 if (showAvailableOnly && isBusySlot) {
                      return (
@@ -426,8 +427,8 @@ const Schedule: React.FC = () => {
                 return (
                     <div 
                         key={item.id}
-                        onClick={(e) => handleDateSelect(e, item.dateStr)}
-                        onDoubleClick={() => handleDateDoubleClick(item.dateStr)}
+                        onClick={(e) => handleDateSelect(e, dayItem.dateStr)}
+                        onDoubleClick={() => handleDateDoubleClick(dayItem.dateStr)}
                         className={`
                             relative p-3 rounded-2xl border transition-all cursor-pointer group min-h-[100px] flex flex-col gap-2
                             ${item.isToday ? 'ring-2 ring-primary ring-offset-2 z-10' : ''}
@@ -454,7 +455,7 @@ const Schedule: React.FC = () => {
                              
                              {/* Plus Button - Single Add */}
                              <button
-                                onClick={(e) => handleAddIconClick(e, item.dateStr)}
+                                onClick={(e) => handleAddIconClick(e, dayItem.dateStr)}
                                 className={`
                                     absolute top-2 right-2 p-1 rounded-full transition-all duration-200
                                     ${hasEvents 
@@ -474,7 +475,7 @@ const Schedule: React.FC = () => {
                         {hasEvents && !isSelected && (
                             <div className="absolute z-50 left-1/2 -translate-x-1/2 bottom-[105%] w-64 bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-border-light p-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none transform translate-y-2 group-hover:translate-y-0">
                                 <div className="flex items-center justify-between border-b border-border-light pb-2 mb-2">
-                                    <span className="text-xs font-bold text-text-main">{item.dateStr}</span>
+                                    <span className="text-xs font-bold text-text-main">{dayItem.dateStr}</span>
                                     <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{item.events.length} 项日程</span>
                                 </div>
                                 <div className="space-y-2 max-h-[180px] overflow-hidden relative">
@@ -695,7 +696,7 @@ const Schedule: React.FC = () => {
       {/* View Day Details Modal */}
       {viewingDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl p-0 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-0 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
                 <div className="bg-primary p-6 text-white relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                     <div className="relative z-10 flex justify-between items-start">

@@ -10,13 +10,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#7C3AED',
+        primary: '#8B5CF6',
         secondary: '#F97316',
         'surface-light': '#FFFFFF',
-        'background-light': '#F3F4F6',
-        'border-light': '#E2E8F0',
-        'text-main': '#0F172A',
-        'text-muted': '#64748B',
+        'background-light': '#F5F7FA', // Updated per Spec
+        'border-light': '#E5E7EB',     // Updated per Spec
+        'text-main': '#1F2937',        // Updated per Spec (text_primary)
+        'text-muted': '#6B7280',       // Updated per Spec (text_secondary)
       },
       fontFamily: {
         sans: ['Inter', 'Noto Sans SC', 'sans-serif'],

@@ -31,6 +31,12 @@ export async function POST(request: NextRequest) {
       user.roles = [...user.roles, "系统管理员"];
     }
 
+    // Handle optional email: Generate unique placeholder if empty
+    // Schema enforces UNIQUE NOT NULL, so we use a specific pattern
+    if (!user.email) {
+      user.email = `no_email_${Date.now()}_${Math.floor(Math.random() * 100000)}@helerix.internal`;
+    }
+
     db.prepare(
       `
       INSERT INTO users (id, name, email, roles, department, status, avatarUrl, bio, phone, joinDate, expertise)

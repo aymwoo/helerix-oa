@@ -262,7 +262,7 @@ const AIExamAnalysis: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-black text-text-main tracking-tight">AI 试卷分析</h1>
+          <h1 className="text-3xl font-semibold text-text-main tracking-tight">AI 试卷分析</h1>
           <p className="text-text-muted mt-2">上传、或直接<b>粘贴(Ctrl+V)</b>试卷图片，AI 将自动为您解析考点分布与命题质量。</p>
         </div>
         <div className="flex gap-3 items-center">
@@ -272,7 +272,7 @@ const AIExamAnalysis: React.FC = () => {
             <select
               value={selectedProviderId}
               onChange={(e) => setSelectedProviderId(e.target.value)}
-              className="appearance-none bg-white border border-border-light pl-9 pr-8 py-3 rounded-xl text-sm font-bold text-text-main focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer shadow-sm hover:bg-gray-50 transition-all min-w-[140px]"
+              className="appearance-none bg-white border border-[#E5E7EB] pl-9 pr-8 py-3 rounded-lg text-sm font-bold text-text-main focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer shadow-sm hover:bg-gray-50 transition-all min-w-[140px]"
             >
 
               {customProviders.map(p => (
@@ -285,14 +285,14 @@ const AIExamAnalysis: React.FC = () => {
 
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className={`px-5 py-3 rounded-xl font-bold transition-all flex items-center gap-2 border shadow-sm active:scale-95 ${showSettings ? 'bg-primary text-white border-primary' : 'bg-white text-text-main border-border-light hover:bg-gray-50'}`}
+            className={`px-5 py-3 rounded-lg font-bold transition-all flex items-center gap-2 border shadow-sm active:scale-95 ${showSettings ? 'bg-primary text-white border-primary' : 'bg-white text-text-main border-[#E5E7EB] hover:bg-gray-50'}`}
           >
             <span className="material-symbols-outlined">{showSettings ? 'auto_fix' : 'psychology_alt'}</span>
             分析指令集
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
+            className="bg-primary text-white px-6 py-3 rounded-lg font-bold shadow-lg shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
           >
             <span className="material-symbols-outlined">upload_file</span>
             上传新试卷
@@ -309,21 +309,21 @@ const AIExamAnalysis: React.FC = () => {
 
       {/* Analysis Settings (Module Independent) */}
       {showSettings && (
-        <div className="bg-white rounded-[2rem] border border-border-light shadow-xl overflow-hidden animate-in slide-in-from-top-4 duration-300 p-8 space-y-6">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl overflow-hidden animate-in slide-in-from-top-4 duration-300 p-8 space-y-6">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-black text-text-main flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-semibold text-text-main flex items-center gap-2 mb-1">
                 <span className="material-symbols-outlined text-primary">auto_fix</span>
                 试卷分析 Prompt 指令集
               </h3>
               <p className="text-xs text-text-muted font-medium">定制 AI 对试卷的研判维度，修改将仅影响“试卷分析”模块。</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>
+              <span className="text-[10px] font-semibold text-text-muted uppercase tracking-widest">选择预设:</span>
               <select
                 value={selectedPromptId}
                 onChange={(e) => handlePromptChange(e.target.value)}
-                className="text-xs font-black bg-background-light border border-border-light rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
+                className="text-xs font-semibold bg-background-light border border-[#E5E7EB] rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 min-w-[160px]"
               >
                 {prompts.map(p => (
                   <option key={p.id} value={p.id}>{p.name}{p.id.length < 10 ? ' (内置)' : ''}</option>
@@ -336,13 +336,13 @@ const AIExamAnalysis: React.FC = () => {
             <textarea
               value={editingPrompt}
               onChange={(e) => setEditingPrompt(e.target.value)}
-              className="w-full h-40 bg-background-light/30 border border-border-light rounded-2xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-primary/20 outline-none resize-none no-scrollbar shadow-inner"
+              className="w-full h-40 bg-background-light/30 border border-[#E5E7EB] rounded-2xl p-5 text-xs font-medium text-text-main leading-relaxed focus:ring-2 focus:ring-primary/20 outline-none resize-none no-scrollbar shadow-inner"
               placeholder="输入 AI 试卷分析指令..."
             />
             <div className="absolute bottom-4 right-4 flex gap-2">
               <button
                 onClick={saveNewPromptVersion}
-                className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
+                className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-semibold hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">save</span>
                 另存为新版本
@@ -350,7 +350,7 @@ const AIExamAnalysis: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 py-2 border-t border-dashed border-border-light">
+          <div className="flex items-center gap-4 py-2 border-t border-dashed border-[#E5E7EB]">
             <div className="flex items-center gap-1.5 text-[10px] text-text-muted italic">
               <span className="material-symbols-outlined text-[16px] text-primary">info</span>
               当前指令集针对试卷 OCR 及教研研判进行了优化。
@@ -363,7 +363,7 @@ const AIExamAnalysis: React.FC = () => {
         {/* Left: Analysis Results or Upload Area */}
         <div className="lg:col-span-8 space-y-8">
           {isAnalyzing ? (
-            <div className="bg-white rounded-3xl border border-border-light p-20 flex flex-col items-center justify-center text-center space-y-6 shadow-sm">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-20 flex flex-col items-center justify-center text-center space-y-6 shadow-sm">
               <div className="relative">
                 <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -380,18 +380,18 @@ const AIExamAnalysis: React.FC = () => {
             </div>
           ) : currentResult ? (
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="bg-white rounded-3xl border border-border-light overflow-hidden shadow-sm">
-                <div className="bg-gradient-to-r from-primary/10 to-transparent p-8 border-b border-border-light flex justify-between items-center">
+              <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden shadow-sm">
+                <div className="bg-gradient-to-r from-primary/10 to-transparent p-8 border-b border-[#E5E7EB] flex justify-between items-center">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded uppercase tracking-widest">{currentResult.subject}</span>
-                      <span className="px-2 py-0.5 bg-background-light text-text-muted text-[10px] font-black rounded uppercase tracking-widest">{currentResult.grade}</span>
+                      <span className="px-2 py-0.5 bg-primary text-white text-[10px] font-semibold rounded uppercase tracking-widest">{currentResult.subject}</span>
+                      <span className="px-2 py-0.5 bg-background-light text-text-muted text-[10px] font-semibold rounded uppercase tracking-widest">{currentResult.grade}</span>
                     </div>
-                    <h2 className="text-2xl font-black text-text-main tracking-tight">{currentResult.title}</h2>
+                    <h2 className="text-2xl font-semibold text-text-main tracking-tight">{currentResult.title}</h2>
                   </div>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-border-light rounded-xl text-sm font-bold text-text-main hover:bg-gray-50 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E5E7EB] rounded-lg text-sm font-bold text-text-main hover:bg-gray-50 transition-all shadow-sm"
                   >
                     <span className="material-symbols-outlined text-[18px]">photo_camera</span>
                     重新上传
@@ -402,14 +402,14 @@ const AIExamAnalysis: React.FC = () => {
                   {/* Interactive Image Previewer */}
                   {currentResult.imageUrl && (
                     <section>
-                      <h3 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-primary rounded-full"></span> 原始试卷影像预览
                       </h3>
-                      <div className="relative bg-background-light rounded-3xl overflow-hidden border border-border-light h-[500px] group touch-none">
+                      <div className="relative bg-background-light rounded-xl overflow-hidden border border-[#E5E7EB] h-[500px] group touch-none">
                         <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="flex bg-white/90 backdrop-blur shadow-xl rounded-xl border border-border-light overflow-hidden">
-                            <button onClick={zoomOut} className="p-2 hover:bg-gray-100 border-r border-border-light"><span className="material-symbols-outlined text-[20px]">zoom_out</span></button>
-                            <button onClick={resetView} className="p-2 hover:bg-gray-100 border-r border-border-light"><span className="material-symbols-outlined text-[20px]">restart_alt</span></button>
+                          <div className="flex bg-white/90 backdrop-blur shadow-xl rounded-lg border border-[#E5E7EB] overflow-hidden">
+                            <button onClick={zoomOut} className="p-2 hover:bg-gray-100 border-r border-[#E5E7EB]"><span className="material-symbols-outlined text-[20px]">zoom_out</span></button>
+                            <button onClick={resetView} className="p-2 hover:bg-gray-100 border-r border-[#E5E7EB]"><span className="material-symbols-outlined text-[20px]">restart_alt</span></button>
                             <button onClick={zoomIn} className="p-2 hover:bg-gray-100"><span className="material-symbols-outlined text-[20px]">zoom_in</span></button>
                           </div>
                         </div>
@@ -433,12 +433,12 @@ const AIExamAnalysis: React.FC = () => {
                   )}
 
                   <section>
-                    <h3 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full"></span> 核心考点分布
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {currentResult.knowledgePoints.map((kp, idx) => (
-                        <span key={idx} className="px-3 py-1.5 bg-primary/5 text-primary rounded-xl text-xs font-bold border border-primary/10">
+                        <span key={idx} className="px-3 py-1.5 bg-primary/5 text-primary rounded-lg text-xs font-bold border border-primary/10">
                           {kp}
                         </span>
                       ))}
@@ -446,7 +446,7 @@ const AIExamAnalysis: React.FC = () => {
                   </section>
 
                   <section>
-                    <h3 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full"></span> 总体研判报告
                     </h3>
                     <p className="text-text-muted leading-relaxed text-sm bg-background-light/50 p-6 rounded-2xl italic">
@@ -455,15 +455,15 @@ const AIExamAnalysis: React.FC = () => {
                   </section>
 
                   <section>
-                    <h3 className="text-sm font-black text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-muted uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-primary rounded-full"></span> 典型题目分析
                     </h3>
                     <div className="space-y-4">
                       {currentResult.itemAnalysis.map((item, idx) => (
-                        <div key={idx} className="p-5 rounded-2xl border border-border-light hover:border-primary/30 transition-colors group">
+                        <div key={idx} className="p-5 rounded-2xl border border-[#E5E7EB] hover:border-primary/30 transition-colors group">
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="font-bold text-text-main group-hover:text-primary transition-colors text-sm">题目描述：{item.question}</h4>
-                            <span className="text-[10px] font-black text-primary/60 uppercase">{item.point}</span>
+                            <span className="text-[10px] font-semibold text-primary/60 uppercase">{item.point}</span>
                           </div>
                           <p className="text-xs text-text-muted leading-relaxed">{item.insight}</p>
                         </div>
@@ -471,10 +471,10 @@ const AIExamAnalysis: React.FC = () => {
                     </div>
                   </section>
 
-                  <section className="bg-primary p-8 rounded-3xl text-white shadow-xl shadow-primary/20 relative overflow-hidden">
+                  <section className="bg-primary p-8 rounded-xl text-white shadow-xl shadow-primary/20 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                     <div className="relative z-10">
-                      <h4 className="text-sm font-black uppercase tracking-widest mb-3 opacity-70">教研专家建议</h4>
+                      <h4 className="text-sm font-semibold uppercase tracking-widest mb-3 opacity-70">教研专家建议</h4>
                       <p className="text-base leading-relaxed font-medium">
                         {currentResult.teachingAdvice}
                       </p>
@@ -486,7 +486,7 @@ const AIExamAnalysis: React.FC = () => {
           ) : (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="bg-white rounded-3xl border-2 border-dashed border-border-light p-20 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group min-h-[500px]"
+              className="bg-white rounded-xl border-2 border-dashed border-[#E5E7EB] p-20 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-all group min-h-[500px]"
             >
               <div className="w-20 h-20 rounded-2xl bg-background-light flex items-center justify-center text-text-muted group-hover:scale-110 group-hover:text-primary transition-all mb-6">
                 <span className="material-symbols-outlined text-5xl">add_photo_alternate</span>
@@ -506,7 +506,7 @@ const AIExamAnalysis: React.FC = () => {
 
         {/* Right: History */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-3xl border border-border-light shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-6">
             <h3 className="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">history</span>
               分析历史记录
@@ -522,7 +522,7 @@ const AIExamAnalysis: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => setCurrentResult(item)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer group relative ${currentResult?.id === item.id ? 'bg-primary/5 border-primary shadow-sm' : 'border-border-light hover:border-primary/50'}`}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer group relative ${currentResult?.id === item.id ? 'bg-primary/5 border-primary shadow-sm' : 'border-[#E5E7EB] hover:border-primary/50'}`}
                   >
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteRecord(item.id); }}
@@ -531,7 +531,7 @@ const AIExamAnalysis: React.FC = () => {
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                     <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-background-light flex-shrink-0 flex items-center justify-center text-text-muted">
+                      <div className="w-12 h-12 rounded-lg bg-background-light flex-shrink-0 flex items-center justify-center text-text-muted">
                         <span className="material-symbols-outlined">{item.subject === '数学' ? 'function' : 'text_snippet'}</span>
                       </div>
                       <div className="min-w-0">
@@ -547,7 +547,7 @@ const AIExamAnalysis: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary rounded-full -mr-12 -mt-12 blur-3xl opacity-30"></div>
             <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-sm">tips_and_updates</span>

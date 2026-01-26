@@ -16,9 +16,12 @@
     "@google/genai": "^1.38.0",
     "better-sqlite3": "^11.8.1",
     "diff": "5.1.0",
-    "next": "^14.2.23",
+    "eslint-config-next": "^16.1.4",
+    "next": "^16.1.4",
+    "pdfjs-dist": "3.11.174",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-pdf": "9.1.1",
     "recharts": "2.12.7",
     "xlsx": "0.18.5"
   },
@@ -27,6 +30,7 @@
     "react-dom": "$react-dom"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -38,7 +42,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.21",
     "jsdom": "^27.4.0",
-    "postcss": "^8.5.3",
+    "postcss": "^8.5.6",
     "tailwindcss": "^4.0.9",
     "typescript": "~5.8.2",
     "vitest": "^4.0.18"

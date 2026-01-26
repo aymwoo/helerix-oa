@@ -405,41 +405,42 @@ const SystemSettings: React.FC = () => {
 
   const getStatusBadge = (status: ConnectionStatus) => {
     switch (status) {
-      case 'connected': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-[10px] font-black border border-green-200"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>已连接</div>;
-      case 'testing': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black border border-blue-200"><span className="material-symbols-outlined text-[12px] animate-spin">sync</span>检测中</div>;
-      case 'error': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black border border-red-200"><span className="material-symbols-outlined text-[12px]">error</span>连接错误</div>;
-      default: return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black border border-gray-200">未连接</div>;
+      case 'connected': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded-lg text-[10px] font-semibold border border-green-200"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>已连接</div>;
+      case 'testing': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-semibold border border-blue-200"><span className="material-symbols-outlined text-[12px] animate-spin">sync</span>检测中</div>;
+      case 'error': return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-semibold border border-red-200"><span className="material-symbols-outlined text-[12px]">error</span>连接错误</div>;
+      default: return <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-semibold border border-gray-200">未连接</div>;
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
-      <div className="flex flex-col gap-2 pb-4 border-b border-border-light">
-        <h1 className="text-3xl font-black text-text-main tracking-tight">系统设置</h1>
+      <div className="flex flex-col gap-2 pb-4 border-b border-[#E5E7EB]">
+        <h1 className="text-3xl font-semibold text-text-main tracking-tight">系统设置</h1>
         <p className="text-text-muted text-base font-normal">
           管理 AI 引擎连接参数、提示词工程及系统数据维护。
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+      {/* Tabs - Pill Shape per Design JSON */}
+      {/* Tabs - Containerized Segmented Control style for better visibility */}
+      <div className="bg-white p-1.5 rounded-xl border border-[#E5E7EB] shadow-sm inline-flex gap-1 overflow-x-auto no-scrollbar max-w-full">
         <button
           onClick={() => setActiveTab('ai-config')}
-          className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'ai-config' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-text-muted border border-border-light hover:bg-gray-50'}`}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'ai-config' ? 'bg-[#8B5CF6] text-white shadow-sm ring-1 ring-black/5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
         >
           <span className="material-symbols-outlined text-[18px]">hub</span>
           AI 模型配置
         </button>
         <button
           onClick={() => setActiveTab('prompt-engineering')}
-          className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'prompt-engineering' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-text-muted border border-border-light hover:bg-gray-50'}`}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'prompt-engineering' ? 'bg-[#8B5CF6] text-white shadow-sm ring-1 ring-black/5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
         >
           <span className="material-symbols-outlined text-[18px]">psychology</span>
           提示词工程
         </button>
         <button
           onClick={() => setActiveTab('system-maintenance')}
-          className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'system-maintenance' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-text-muted border border-border-light hover:bg-gray-50'}`}
+          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'system-maintenance' ? 'bg-[#8B5CF6] text-white shadow-sm ring-1 ring-black/5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
         >
           <span className="material-symbols-outlined text-[18px]">database</span>
           系统维护与备份
@@ -451,14 +452,15 @@ const SystemSettings: React.FC = () => {
         {activeTab === 'ai-config' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
             {/* Custom Providers */}
-            <div className="bg-white rounded-[2rem] border border-border-light p-8 shadow-sm">
+            {/* Custom Providers - Card Style per Design JSON: rounded-xl (12px), p-6 (24px), shadow */}
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 shadow">
               <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
                   <div className="bg-slate-900 p-2.5 rounded-2xl text-white shadow-md">
                     <span className="material-symbols-outlined">extension</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-text-main leading-tight">自定义 OpenAI 兼容网关</h3>
+                    <h3 className="text-lg font-semibold text-text-main leading-tight">自定义 OpenAI 兼容网关</h3>
                     <p className="text-xs text-text-muted mt-0.5">连接 Qwen、DeepSeek、Ollama 等兼容接口。</p>
                   </div>
                 </div>
@@ -472,25 +474,23 @@ const SystemSettings: React.FC = () => {
                   />
                   <button
                     onClick={() => importInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border bg-white text-text-muted border-border-light hover:bg-gray-50 transition-all hover:text-text-main shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
                   >
-                    <span className="material-symbols-outlined text-[16px]">upload_file</span>
-                    上传配置
+                    导入配置
                   </button>
                   <button
                     onClick={handlePasteProviders}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border bg-white text-text-muted border-border-light hover:bg-gray-50 transition-all hover:text-text-main shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
                     title="从剪贴板粘贴 JSON 配置"
                   >
                     <span className="material-symbols-outlined text-[16px]">content_paste</span>
-                    粘贴导入
+                    粘贴配置
                   </button>
                   <button
                     onClick={() => isAddingCustom ? cancelAddOrEdit() : setIsAddingCustom(true)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${isAddingCustom ? 'bg-slate-100 text-slate-600' : 'bg-primary text-white border-primary shadow-lg shadow-primary/20 hover:bg-violet-700'}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isAddingCustom ? 'bg-gray-100 text-gray-600' : 'bg-[#8B5CF6] text-white hover:bg-violet-600 shadow-sm'}`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">{isAddingCustom ? 'close' : 'add'}</span>
-                    {isAddingCustom ? '取消' : '添加提供商'}
+                    {isAddingCustom ? '取消' : '+ 添加提供商'}
                   </button>
                 </div>
               </div>
@@ -499,7 +499,7 @@ const SystemSettings: React.FC = () => {
               <div className="mb-4">
                 <button
                   onClick={() => setIsJsonHelpOpen(!isJsonHelpOpen)}
-                  className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-primary transition-colors"
+                  className="flex items-center gap-2 text-xs font-semibold text-text-muted hover:text-[#8B5CF6] transition-colors"
                 >
                   <span className={`material-symbols-outlined text-[16px] transition-transform ${isJsonHelpOpen ? 'rotate-90' : ''}`}>
                     chevron_right
@@ -512,8 +512,8 @@ const SystemSettings: React.FC = () => {
                   <div className="mt-4 p-5 bg-slate-50 border border-slate-200 rounded-xl animate-in slide-in-from-top-2 duration-200">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
-                        <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-primary text-[18px]">code</span>
+                        <h4 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[#8B5CF6] text-[18px]">code</span>
                           JSON 格式示例
                         </h4>
                         <pre className="bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed">
@@ -534,28 +534,28 @@ const SystemSettings: React.FC = () => {
                         </pre>
                       </div>
                       <div className="w-64 shrink-0">
-                        <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-primary text-[18px]">list</span>
+                        <h4 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[#8B5CF6] text-[18px]">list</span>
                           字段说明
                         </h4>
                         <div className="space-y-2 text-xs">
                           <div className="p-2 bg-white rounded-lg border border-slate-200">
-                            <span className="font-bold text-violet-600">name</span>
+                            <span className="font-semibold text-violet-600">name</span>
                             <span className="text-red-500 ml-0.5">*</span>
                             <p className="text-text-muted mt-0.5">提供商显示名称</p>
                           </div>
                           <div className="p-2 bg-white rounded-lg border border-slate-200">
-                            <span className="font-bold text-violet-600">baseUrl</span>
+                            <span className="font-semibold text-violet-600">baseUrl</span>
                             <span className="text-red-500 ml-0.5">*</span>
                             <p className="text-text-muted mt-0.5">API 接口地址</p>
                           </div>
                           <div className="p-2 bg-white rounded-lg border border-slate-200">
-                            <span className="font-bold text-violet-600">apiKey</span>
+                            <span className="font-semibold text-violet-600">apiKey</span>
                             <span className="text-red-500 ml-0.5">*</span>
                             <p className="text-text-muted mt-0.5">API 密钥</p>
                           </div>
                           <div className="p-2 bg-white rounded-lg border border-slate-200">
-                            <span className="font-bold text-violet-600">modelId</span>
+                            <span className="font-semibold text-violet-600">modelId</span>
                             <p className="text-text-muted mt-0.5">模型名称（可选）</p>
                           </div>
                         </div>
@@ -572,7 +572,7 @@ const SystemSettings: React.FC = () => {
                   {/* Quick Templates - Only show when adding new */}
                   {!editingProviderId && (
                     <div className="flex flex-wrap gap-2 mb-6 items-center">
-                      <span className="text-[10px] font-black text-text-muted uppercase tracking-widest mr-2 flex items-center gap-1">
+                      <span className="text-[10px] font-semibold text-text-muted uppercase tracking-widest mr-2 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
                         快速模板:
                       </span>
@@ -584,7 +584,7 @@ const SystemSettings: React.FC = () => {
                         <button
                           key={t.name}
                           onClick={() => setNewProvider({ ...newProvider, ...t.config })}
-                          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:border-primary hover:text-primary transition-all shadow-sm active:scale-95"
+                          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:border-[#8B5CF6] hover:text-[#8B5CF6] transition-all shadow-sm active:scale-95"
                         >
                           {t.name}
                         </button>
@@ -592,36 +592,36 @@ const SystemSettings: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 mb-4 text-sm font-bold text-text-main">
-                    <span className="material-symbols-outlined text-primary">{editingProviderId ? 'edit' : 'add_circle'}</span>
+                  <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-text-main">
+                    <span className="material-symbols-outlined text-[#8B5CF6]">{editingProviderId ? 'edit' : 'add_circle'}</span>
                     {editingProviderId ? '编辑提供商配置' : '手动输入配置'}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-text-muted uppercase ml-1">提供商名称 (Display Name)</label>
-                      <input type="text" value={newProvider.name} onChange={e => setNewProvider({ ...newProvider, name: e.target.value })} placeholder="例如: My Ollama Server" className="w-full bg-white border border-border-light text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 font-bold" />
+                      <label className="text-[10px] font-semibold text-text-muted uppercase ml-1">提供商名称 (Display Name)</label>
+                      <input type="text" value={newProvider.name} onChange={e => setNewProvider({ ...newProvider, name: e.target.value })} placeholder="例如: My Ollama Server" className="w-full bg-white border border-[#E5E7EB] text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 font-semibold" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-text-muted uppercase ml-1">Base URL (API Endpoint)</label>
-                      <input type="text" value={newProvider.baseUrl} onChange={e => setNewProvider({ ...newProvider, baseUrl: e.target.value })} placeholder="例如: https://api.myserver.com/v1" className="w-full bg-white border border-border-light text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+                      <label className="text-[10px] font-semibold text-text-muted uppercase ml-1">Base URL (API Endpoint)</label>
+                      <input type="text" value={newProvider.baseUrl} onChange={e => setNewProvider({ ...newProvider, baseUrl: e.target.value })} placeholder="例如: https://api.myserver.com/v1" className="w-full bg-white border border-[#E5E7EB] text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-text-muted uppercase ml-1">API Key</label>
-                      <input type="password" value={newProvider.apiKey} onChange={e => setNewProvider({ ...newProvider, apiKey: e.target.value })} placeholder="sk-..." className="w-full bg-white border border-border-light text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+                      <label className="text-[10px] font-semibold text-text-muted uppercase ml-1">API Key</label>
+                      <input type="password" value={newProvider.apiKey} onChange={e => setNewProvider({ ...newProvider, apiKey: e.target.value })} placeholder="sk-..." className="w-full bg-white border border-[#E5E7EB] text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-text-muted uppercase ml-1">Model Name / ID</label>
-                      <input type="text" value={newProvider.modelId} onChange={e => setNewProvider({ ...newProvider, modelId: e.target.value })} placeholder="例如: gpt-4-turbo, llama3:latest" className="w-full bg-white border border-border-light text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+                      <label className="text-[10px] font-semibold text-text-muted uppercase ml-1">Model Name / ID</label>
+                      <input type="text" value={newProvider.modelId} onChange={e => setNewProvider({ ...newProvider, modelId: e.target.value })} placeholder="例如: gpt-4-turbo, llama3:latest" className="w-full bg-white border border-[#E5E7EB] text-xs rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 font-mono" />
                     </div>
                   </div>
                   <div className="flex justify-end gap-3">
                     {editingProviderId && (
-                      <button onClick={cancelAddOrEdit} className="px-5 py-2 bg-white border border-border-light text-text-muted rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors">
+                      <button onClick={cancelAddOrEdit} className="px-5 py-2 bg-white border border-[#E5E7EB] text-text-muted rounded-xl text-xs font-semibold hover:bg-gray-50 transition-colors">
                         取消修改
                       </button>
                     )}
-                    <button onClick={handleAddCustomProvider} className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95">
+                    <button onClick={handleAddCustomProvider} className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors shadow-sm active:scale-95">
                       {editingProviderId ? '保存修改' : '确认添加'}
                     </button>
                   </div>
@@ -630,9 +630,9 @@ const SystemSettings: React.FC = () => {
 
               <div className="space-y-4">
                 {customProviders.length === 0 ? (
-                  <div className="text-center py-8 bg-background-light/30 rounded-2xl border border-dashed border-border-light text-text-muted">
-                    <span className="material-symbols-outlined opacity-20 text-4xl mb-2">dns</span>
-                    <p className="text-xs font-medium">暂无自定义提供商</p>
+                  <div className="text-center py-[60px] text-gray-400 border border-dashed border-gray-200 rounded-lg mt-4">
+                    <span className="material-symbols-outlined opacity-50 text-4xl mb-2">dns</span>
+                    <p className="text-sm">暂无自定义提供商</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -640,32 +640,32 @@ const SystemSettings: React.FC = () => {
                       const status = customTestResults[provider.id]?.status || 'disconnected';
                       const message = customTestResults[provider.id]?.message;
                       return (
-                        <div key={provider.id} className="p-4 rounded-2xl bg-white border border-border-light shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between group">
+                        <div key={provider.id} className="p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between group">
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-semibold border border-slate-200">
                               {provider.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-text-main text-sm">{provider.name}</h4>
+                                <h4 className="font-semibold text-text-main text-sm">{provider.name}</h4>
                                 {getStatusBadge(status)}
                               </div>
                               <div className="flex items-center gap-3 text-[10px] text-text-muted font-mono mt-1">
-                                <span className="bg-background-light px-1.5 py-0.5 rounded border border-border-light truncate max-w-[150px]" title={provider.baseUrl}>{provider.baseUrl}</span>
-                                {provider.modelId && <span className="bg-background-light px-1.5 py-0.5 rounded border border-border-light text-primary truncate max-w-[100px]">{provider.modelId}</span>}
+                                <span className="bg-background-light px-1.5 py-0.5 rounded border border-[#E5E7EB] truncate max-w-[150px]" title={provider.baseUrl}>{provider.baseUrl}</span>
+                                {provider.modelId && <span className="bg-background-light px-1.5 py-0.5 rounded border border-[#E5E7EB] text-[#8B5CF6] truncate max-w-[100px]">{provider.modelId}</span>}
                               </div>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-2 w-full md:w-auto">
                             {message && (
-                              <div className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-bold truncate max-w-[200px] ${status === 'error' ? 'bg-red-50 text-red-600' : status === 'connected' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                              <div className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-[10px] font-semibold truncate max-w-[200px] ${status === 'error' ? 'bg-red-50 text-red-600' : status === 'connected' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
                                 {message}
                               </div>
                             )}
-                            <button onClick={() => testCustomConnection(provider)} disabled={status === 'testing'} className="p-2 bg-white border border-border-light rounded-xl hover:bg-gray-50 text-text-muted hover:text-primary transition-colors disabled:opacity-50" title="测试连接"><span className={`material-symbols-outlined text-[18px] ${status === 'testing' ? 'animate-spin' : ''}`}>network_check</span></button>
-                            <button onClick={() => handleEditCustomProvider(provider)} className="p-2 bg-white border border-border-light rounded-xl hover:bg-gray-50 text-text-muted hover:text-primary transition-colors" title="编辑配置"><span className="material-symbols-outlined text-[18px]">edit</span></button>
-                            <button onClick={() => handleDeleteCustomProvider(provider.id)} className="p-2 bg-white border border-border-light rounded-xl hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors" title="删除配置"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                            <button onClick={() => testCustomConnection(provider)} disabled={status === 'testing'} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 text-text-muted hover:text-[#8B5CF6] transition-colors disabled:opacity-50" title="测试连接"><span className={`material-symbols-outlined text-[18px] ${status === 'testing' ? 'animate-spin' : ''}`}>network_check</span></button>
+                            <button onClick={() => handleEditCustomProvider(provider)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 text-text-muted hover:text-[#8B5CF6] transition-colors" title="编辑配置"><span className="material-symbols-outlined text-[18px]">edit</span></button>
+                            <button onClick={() => handleDeleteCustomProvider(provider.id)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors" title="删除配置"><span className="material-symbols-outlined text-[18px]">delete</span></button>
                           </div>
                         </div>
                       );
@@ -687,22 +687,22 @@ const SystemSettings: React.FC = () => {
                   <button
                     key={cat}
                     onClick={() => setSelectedPromptCategory(cat as PromptCategory)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${selectedPromptCategory === cat ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-text-muted border-border-light hover:bg-gray-50'}`}
+                    className={`px-4 py-2 rounded-lg text-xs font-semibold border transition-all ${selectedPromptCategory === cat ? 'bg-[#8B5CF6] text-white border-[#8B5CF6] shadow-md' : 'bg-white text-text-muted border-[#E5E7EB] hover:bg-gray-50'}`}
                   >
                     {cat === 'exam' ? '试卷分析' : cat === 'certificate' ? '证书识别' : '方案批评者'}
                   </button>
                 ))}
               </div>
 
-              <div className="bg-white rounded-[2rem] border border-border-light shadow-sm p-6 flex flex-col gap-4 h-[600px]">
-                <div className="flex justify-between items-center pb-4 border-b border-border-light">
+              <div className="bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm p-6 flex flex-col gap-4 h-[600px]">
+                <div className="flex justify-between items-center pb-4 border-b border-[#E5E7EB]">
                   <div>
-                    <h3 className="font-bold text-text-main">当前指令内容 (System Prompt)</h3>
+                    <h3 className="font-semibold text-text-main">当前指令内容 (System Prompt)</h3>
                     <p className="text-xs text-text-muted mt-0.5">此内容将作为 AI 的系统预设 (System Instruction) 生效</p>
                   </div>
                   <button
                     onClick={() => handleSavePrompt(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#8B5CF6] text-white rounded-xl text-xs font-semibold hover:bg-violet-700 shadow-lg shadow-[#8B5CF6]/20 transition-all active:scale-95"
                   >
                     <span className="material-symbols-outlined text-[16px]">save</span>
                     保存为新版本
@@ -711,7 +711,7 @@ const SystemSettings: React.FC = () => {
                 <textarea
                   value={currentPromptContent}
                   onChange={(e) => setCurrentPromptContent(e.target.value)}
-                  className="flex-1 w-full bg-background-light/30 border border-border-light rounded-xl p-4 text-sm font-mono text-text-main outline-none focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed"
+                  className="flex-1 w-full bg-background-light/30 border border-[#E5E7EB] rounded-xl p-4 text-sm font-mono text-text-main outline-none focus:ring-2 focus:ring-[#8B5CF6]/20 resize-none leading-relaxed"
                   placeholder="在此输入系统指令..."
                 />
               </div>
@@ -719,33 +719,33 @@ const SystemSettings: React.FC = () => {
 
             {/* Right: History & Actions */}
             <div className="col-span-12 lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-[2rem] border border-border-light shadow-sm p-6 h-[650px] flex flex-col">
-                <h3 className="font-bold text-text-main mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">history</span>
+              <div className="bg-white rounded-[2rem] border border-[#E5E7EB] shadow-sm p-6 h-[650px] flex flex-col">
+                <h3 className="font-semibold text-text-main mb-4 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#8B5CF6]">history</span>
                   版本历史
                 </h3>
                 <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                   {prompts.map((p) => (
-                    <div key={p.id} className={`p-4 rounded-xl border transition-all group ${p.isDefault ? 'bg-primary/5 border-primary shadow-sm' : 'bg-white border-border-light hover:border-primary/30'}`}>
+                    <div key={p.id} className={`p-4 rounded-xl border transition-all group ${p.isDefault ? 'bg-[#8B5CF6]/5 border-[#8B5CF6] shadow-sm' : 'bg-white border-[#E5E7EB] hover:border-[#8B5CF6]/30'}`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-bold text-sm text-text-main line-clamp-1">{p.name}</h4>
+                          <h4 className="font-semibold text-sm text-text-main line-clamp-1">{p.name}</h4>
                           <p className="text-[10px] text-text-muted font-mono mt-0.5">{new Date(p.timestamp).toLocaleString()}</p>
                         </div>
                         {p.isDefault && (
-                          <span className="px-2 py-0.5 bg-primary text-white text-[9px] font-black rounded uppercase">Active</span>
+                          <span className="px-2 py-0.5 bg-[#8B5CF6] text-white text-[9px] font-semibold rounded uppercase">Active</span>
                         )}
                       </div>
                       <div className="flex gap-2 mt-3 opacity-60 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleRestoreVersion(p)}
-                          className="flex-1 py-1.5 bg-white border border-border-light rounded-lg text-[10px] font-bold text-text-muted hover:text-primary hover:border-primary transition-colors"
+                          className="flex-1 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-[10px] font-semibold text-text-muted hover:text-[#8B5CF6] hover:border-[#8B5CF6] transition-colors"
                         >
                           恢复此版
                         </button>
                         <button
                           onClick={() => handleCompareVersion(p)}
-                          className="flex-1 py-1.5 bg-white border border-border-light rounded-lg text-[10px] font-bold text-text-muted hover:text-blue-600 hover:border-blue-300 transition-colors"
+                          className="flex-1 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-[10px] font-semibold text-text-muted hover:text-blue-600 hover:border-blue-300 transition-colors"
                         >
                           Diff 比对
                         </button>
@@ -763,10 +763,10 @@ const SystemSettings: React.FC = () => {
 
         {activeTab === 'system-maintenance' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-white rounded-[2rem] border border-border-light p-10 shadow-sm flex flex-col md:flex-row gap-10 items-center justify-between relative overflow-hidden">
+            <div className="bg-white rounded-[2rem] border border-[#E5E7EB] p-10 shadow-sm flex flex-col md:flex-row gap-10 items-center justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 w-80 h-80 bg-slate-900/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
               <div className="relative z-10 max-w-lg">
-                <h2 className="text-2xl font-black text-text-main mb-4">系统数据快照备份</h2>
+                <h2 className="text-2xl font-semibold text-text-main mb-4">系统数据快照备份</h2>
                 <p className="text-sm text-text-muted leading-relaxed">
                   导出当前系统内的所有数据（包括用户信息、排期、证书记录及 Prompt 预设）为一个独立的 SQLite 数据库文件 (.db)。
                   <br /><br />
@@ -776,7 +776,7 @@ const SystemSettings: React.FC = () => {
               <div className="relative z-10 shrink-0">
                 <button
                   onClick={handleBackup}
-                  className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl hover:bg-slate-800 hover:scale-105 transition-all active:scale-95 flex items-center gap-3"
+                  className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-semibold shadow-xl hover:bg-slate-800 hover:scale-105 transition-all active:scale-95 flex items-center gap-3"
                 >
                   <span className="material-symbols-outlined text-3xl">cloud_download</span>
                   <div className="text-left">
@@ -791,7 +791,7 @@ const SystemSettings: React.FC = () => {
               <div className="max-w-lg">
                 <div className="flex items-center gap-2 mb-4 text-red-600">
                   <span className="material-symbols-outlined">warning</span>
-                  <h2 className="text-2xl font-black">灾难恢复 / 数据迁移</h2>
+                  <h2 className="text-2xl font-semibold">灾难恢复 / 数据迁移</h2>
                 </div>
                 <p className="text-sm text-red-800/70 leading-relaxed font-medium">
                   从备份文件恢复数据将<strong className="text-red-600">永久覆盖</strong>当前系统内的所有记录。此操作不可撤销。
@@ -856,10 +856,10 @@ const SystemSettings: React.FC = () => {
               </div>
 
               <div className="p-4 border-t border-border-light flex justify-end gap-3 bg-background-light/20">
-                <button onClick={() => setIsDiffModalOpen(false)} className="px-6 py-2.5 bg-white border border-border-light rounded-xl font-bold text-sm text-text-main hover:bg-gray-50 transition-colors">关闭</button>
+                <button onClick={() => setIsDiffModalOpen(false)} className="px-6 py-2.5 bg-white border border-border-light rounded-lg font-semibold text-sm text-text-main hover:bg-gray-50 transition-colors">关闭</button>
                 <button
                   onClick={() => { handleRestoreVersion(compareVersion); setIsDiffModalOpen(false); }}
-                  className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-colors"
+                  className="px-6 py-2.5 bg-[#8B5CF6] text-white rounded-lg font-semibold text-sm shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-colors"
                 >
                   回滚到旧版本
                 </button>
@@ -875,11 +875,11 @@ const SystemSettings: React.FC = () => {
           <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col h-[80vh] overflow-hidden animate-in zoom-in duration-200">
             <div className="px-6 py-5 border-b flex justify-between items-center bg-gradient-to-r from-slate-50 to-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-lg">
                   <span className="material-symbols-outlined">content_paste</span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-text-main">确认导入配置</h3>
+                  <h3 className="text-xl font-semibold text-text-main">确认导入配置</h3>
                   <p className="text-xs text-text-muted">检查以下 JSON 内容，确认后将导入 {pastePreviewProviders.length} 个提供商</p>
                 </div>
               </div>
@@ -892,24 +892,24 @@ const SystemSettings: React.FC = () => {
               {/* JSON Preview - Editable */}
               <div className="flex-1 p-5 overflow-auto border-r border-border-light flex flex-col">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-bold text-text-main flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-[18px]">code</span>
+                  <h4 className="text-sm font-semibold text-text-main flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#8B5CF6] text-[18px]">code</span>
                     JSON 内容 (可编辑)
                   </h4>
                   {pastePreviewError ? (
-                    <span className="text-[10px] text-red-500 font-bold bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
+                    <span className="text-[10px] text-red-500 font-semibold bg-red-50 px-2 py-0.5 rounded border border-red-100 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[12px]">error</span>
                       格式错误
                     </span>
                   ) : (
-                    <span className="text-[10px] text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded border border-green-100 flex items-center gap-1">
+                    <span className="text-[10px] text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded border border-green-100 flex items-center gap-1">
                       <span className="material-symbols-outlined text-[12px]">check</span>
                       格式正确
                     </span>
                   )}
                 </div>
                 <textarea
-                  className={`flex-1 w-full bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono resize outline-none border-2 transition-colors leading-relaxed ${pastePreviewError ? 'border-red-500/50' : 'border-transparent focus:border-primary/50'}`}
+                  className={`flex-1 w-full bg-slate-900 text-slate-100 p-4 rounded-lg text-xs font-mono resize outline-none border-2 transition-colors leading-relaxed ${pastePreviewError ? 'border-red-500/50' : 'border-transparent focus:border-[#8B5CF6]/50'}`}
                   value={pastePreviewJson}
                   onChange={(e) => parseAndPreview(e.target.value)}
                   placeholder="在此处粘贴或输入 JSON 配置..."
@@ -917,7 +917,7 @@ const SystemSettings: React.FC = () => {
                 />
                 {pastePreviewError && (
                   <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-600">
-                    <p className="font-bold flex items-center gap-1 mb-1">
+                    <p className="font-semibold flex items-center gap-1 mb-1">
                       解析失败:
                     </p>
                     <p className="font-mono text-[10px] break-all opacity-80">{pastePreviewError}</p>
@@ -927,7 +927,7 @@ const SystemSettings: React.FC = () => {
 
               {/* Parsed Providers */}
               <div className="w-full md:w-80 p-5 bg-slate-50 overflow-auto flex flex-col">
-                <h4 className="text-sm font-bold text-text-main mb-3 flex items-center gap-2 shrink-0">
+                <h4 className="text-sm font-semibold text-text-main mb-3 flex items-center gap-2 shrink-0">
                   <span className="material-symbols-outlined text-green-500 text-[18px]">check_circle</span>
                   解析结果 ({pastePreviewProviders.length} 个)
                 </h4>
@@ -935,15 +935,15 @@ const SystemSettings: React.FC = () => {
                 {pastePreviewProviders.length > 0 ? (
                   <div className="space-y-3 overflow-y-auto pr-1">
                     {pastePreviewProviders.map((provider, idx) => (
-                      <div key={idx} className="p-3 bg-white rounded-xl border border-border-light shadow-sm animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${idx * 50}ms` }}>
-                        <h5 className="font-bold text-text-main text-sm truncate">{provider.name}</h5>
+                      <div key={idx} className="p-3 bg-white rounded-lg border border-border-light shadow-sm animate-in fade-in slide-in-from-right-4" style={{ animationDelay: `${idx * 50}ms` }}>
+                        <h5 className="font-semibold text-text-main text-sm truncate">{provider.name}</h5>
                         <p className="text-[10px] text-text-muted mt-1 truncate font-mono">{provider.baseUrl}</p>
                         <div className="flex gap-2 mt-2">
-                          <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-bold border border-green-100">
+                          <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded text-[10px] font-semibold border border-green-100">
                             ✓ API Key
                           </span>
                           {provider.modelId && (
-                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold border border-blue-100 truncate max-w-[100px]">
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold border border-blue-100 truncate max-w-[100px]">
                               {provider.modelId}
                             </span>
                           )}
@@ -963,14 +963,14 @@ const SystemSettings: React.FC = () => {
             <div className="px-6 py-5 border-t bg-white flex justify-end gap-3">
               <button
                 onClick={cancelPasteImport}
-                className="px-6 py-2.5 border rounded-xl text-text-muted font-bold text-sm hover:bg-gray-50 transition-colors"
+                className="px-6 py-2.5 border rounded-lg text-text-muted font-semibold text-sm hover:bg-gray-50 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={confirmPasteImport}
                 disabled={pastePreviewProviders.length === 0}
-                className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                className="px-6 py-2.5 bg-[#8B5CF6] text-white rounded-lg font-semibold text-sm shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
                 <span className="material-symbols-outlined text-[18px]">check</span>
                 确认导入 {pastePreviewProviders.length > 0 ? `${pastePreviewProviders.length} 个` : ''}
