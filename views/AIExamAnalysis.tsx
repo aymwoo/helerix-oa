@@ -480,11 +480,14 @@ const AIExamAnalysis: React.FC = () => {
                     </div>
                   </section>
 
-                  <section className="bg-primary p-8 rounded-xl text-white shadow-xl shadow-primary/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <section className="bg-violet-50 p-8 rounded-xl text-violet-900 border border-violet-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                     <div className="relative z-10">
-                      <h4 className="text-sm font-semibold uppercase tracking-widest mb-3 opacity-70">教研专家建议</h4>
-                      <p className="text-base leading-relaxed font-medium">
+                      <h4 className="text-sm font-bold uppercase tracking-widest mb-3 text-violet-700 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-lg">lightbulb</span>
+                        教研专家建议
+                      </h4>
+                      <p className="text-base leading-relaxed font-medium text-violet-900">
                         {currentResult.teachingAdvice}
                       </p>
                     </div>
