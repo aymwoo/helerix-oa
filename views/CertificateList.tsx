@@ -322,7 +322,9 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "environment" } 
+      });
       setCameraStream(stream);
       setIsCameraOpen(true);
       setTimeout(() => {
