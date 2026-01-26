@@ -7,9 +7,10 @@ interface SidebarProps {
   currentView: ViewState;
   onNavigate: (view: ViewState) => void;
   currentUser: User | null;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser, onLogout }) => {
   const isAdmin = currentUser?.roles.includes(UserRole.Admin);
 
   const getLinkClass = (view: ViewState) => {
@@ -18,6 +19,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser 
       ? "bg-primary/10 text-primary font-medium"
       : "text-text-muted hover:bg-white hover:text-text-main"
       }`;
+  };
+
+  const handleLogoutClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the parent click (navigate to my-profile)
+    if (window.confirm("确定要退出登录吗？")) {
+      onLogout?.();
+    }
   };
 
   return (
@@ -80,7 +88,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser 
               <p className="text-[10px] text-text-muted truncate font-bold uppercase tracking-tighter">{currentUser?.roles[0] || "访客"}</p>
             </div>
           </div>
-          <button className="text-text-muted hover:text-red-500 transition-colors">
+          <button 
+            onClick={handleLogoutClick}
+            className="text-text-muted hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+            title="退出登录"
+          >
             <span className="material-symbols-outlined text-xl">logout</span>
           </button>
         </div>

@@ -28,3 +28,12 @@ dist-ssr
 .gemini/
 test_output.txt
 bun.lock
+
+# SQLite Database
+data/
+*.db
+
+# Next.js
+.next/
+out/
+next-env.d.ts

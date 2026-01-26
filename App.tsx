@@ -10,29 +10,58 @@ import AIExamAnalysis from './views/AIExamAnalysis';
 import AICritic from './views/AICritic';
 import Schedule from './views/Schedule';
 import MyProfile from './views/MyProfile';
+import Login from './views/Login';
 import { ViewState, User, UserRole } from './types';
 import { UserDatabase } from './db';
+
+const AUTH_STORAGE_KEY = 'helerix_auth_user_id';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('schedule');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedCertId, setSelectedCertId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
+  // Check for existing session on mount
   useEffect(() => {
-    const initUser = async () => {
+    const checkAuth = async () => {
       try {
         await UserDatabase.initialize();
-        const users = await UserDatabase.getAll();
-        if (users.length > 0) {
-          setCurrentUser(users[0]);
+        const storedUserId = localStorage.getItem(AUTH_STORAGE_KEY);
+        
+        if (storedUserId) {
+          const user = await UserDatabase.getById(storedUserId);
+          if (user) {
+            setCurrentUser(user);
+            setIsAuthenticated(true);
+          } else {
+            // Stored user no longer exists, clear storage
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+          }
         }
       } catch (error) {
-        console.error("Failed to load user", error);
+        console.error("Failed to check auth", error);
+      } finally {
+        setIsInitializing(false);
       }
     };
-    initUser();
+    checkAuth();
   }, []);
+
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    localStorage.setItem(AUTH_STORAGE_KEY, user.id);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    setCurrentView('schedule');
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  };
 
   const handleNavigate = (view: ViewState) => {
     // Permission check for system settings
@@ -73,9 +102,31 @@ const App: React.FC = () => {
     }
   };
 
+  // Show loading spinner during initialization
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900">
+        <div className="flex flex-col items-center gap-4">
+          <span className="material-symbols-outlined text-white/50 text-5xl animate-spin">sync</span>
+          <p className="text-white/40 text-sm font-medium">正在加载...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background-light">
-      <Sidebar currentView={currentView} onNavigate={handleNavigate} currentUser={currentUser} />
+      <Sidebar 
+        currentView={currentView} 
+        onNavigate={handleNavigate} 
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <main className="flex-1 overflow-y-auto p-6 lg:p-8 no-scrollbar">
           {renderView()}
