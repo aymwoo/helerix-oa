@@ -39,7 +39,8 @@ db.exec(`
     category TEXT,
     credentialUrl TEXT,
     hours INTEGER DEFAULT 0,
-    timestamp INTEGER
+    timestamp INTEGER,
+    userId TEXT
   );
 
   CREATE TABLE IF NOT EXISTS uploads (
@@ -69,7 +70,8 @@ db.exec(`
     id TEXT PRIMARY KEY,
     title TEXT,
     timestamp INTEGER,
-    messages TEXT
+    messages TEXT,
+    userId TEXT
   );
 
   CREATE TABLE IF NOT EXISTS prompts (
@@ -103,6 +105,20 @@ db.exec(`
 const usersTableInfo = db.prepare("PRAGMA table_info(users)").all() as any[];
 if (!usersTableInfo.some((col) => col.name === "password")) {
   db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '123456'");
+}
+
+const certsTableInfo = db
+  .prepare("PRAGMA table_info(certificates)")
+  .all() as any[];
+if (!certsTableInfo.some((col) => col.name === "userId")) {
+  db.exec("ALTER TABLE certificates ADD COLUMN userId TEXT");
+}
+
+const sessionsTableInfo = db
+  .prepare("PRAGMA table_info(critic_sessions)")
+  .all() as any[];
+if (!sessionsTableInfo.some((col) => col.name === "userId")) {
+  db.exec("ALTER TABLE critic_sessions ADD COLUMN userId TEXT");
 }
 
 // Initialize default prompts if not exist

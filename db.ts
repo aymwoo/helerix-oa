@@ -11,6 +11,18 @@ import {
 } from "./types";
 
 const API_BASE = "/api";
+const AUTH_STORAGE_KEY = "helerix_auth_user_id";
+
+const getAuthHeaders = () => {
+  const userId =
+    typeof window !== "undefined"
+      ? localStorage.getItem(AUTH_STORAGE_KEY)
+      : null;
+  return {
+    "Content-Type": "application/json",
+    "x-user-id": userId || "",
+  };
+};
 
 // ============ USERS ============
 export const UserDatabase = {
@@ -19,13 +31,15 @@ export const UserDatabase = {
   },
 
   getAll: async (): Promise<User[]> => {
-    const res = await fetch(`${API_BASE}/users`);
+    const res = await fetch(`${API_BASE}/users`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error("Failed to fetch users");
     return res.json();
   },
 
   getById: async (id: string): Promise<User | null> => {
-    const res = await fetch(`${API_BASE}/users/${id}`);
+    const res = await fetch(`${API_BASE}/users/${id}`, {
+      headers: getAuthHeaders(),
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("Failed to fetch user");
     return res.json();
@@ -34,7 +48,7 @@ export const UserDatabase = {
   add: async (user: User): Promise<User[]> => {
     const res = await fetch(`${API_BASE}/users`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(user),
     });
     if (!res.ok) {
@@ -47,7 +61,7 @@ export const UserDatabase = {
   update: async (user: User): Promise<User[]> => {
     const res = await fetch(`${API_BASE}/users/${user.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(user),
     });
     if (!res.ok) throw new Error("Failed to update user");
@@ -55,7 +69,10 @@ export const UserDatabase = {
   },
 
   delete: async (id: string): Promise<User[]> => {
-    const res = await fetch(`${API_BASE}/users/${id}`, { method: "DELETE" });
+    const res = await fetch(`${API_BASE}/users/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Failed to delete user");
     return UserDatabase.getAll();
   },
@@ -66,7 +83,7 @@ export const UserDatabase = {
   ): Promise<User[]> => {
     const res = await fetch(`${API_BASE}/users`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ ids, password }),
     });
     if (!res.ok) throw new Error("Failed to batch reset passwords");
@@ -79,23 +96,32 @@ export const CertificateDatabase = {
   initialize: async (): Promise<void> => {},
 
   getAll: async (): Promise<Certificate[]> => {
-    const res = await fetch(`${API_BASE}/certificates`);
+    const res = await fetch(`${API_BASE}/certificates`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Failed to fetch certificates");
     return res.json();
   },
 
   getById: async (id: string): Promise<Certificate | null> => {
-    const res = await fetch(`${API_BASE}/certificates/${id}`);
+    const res = await fetch(`${API_BASE}/certificates/${id}`, {
+      headers: getAuthHeaders(),
+    });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("Failed to fetch certificate");
     return res.json();
   },
 
   add: async (cert: Certificate): Promise<Certificate[]> => {
+    const userId =
+      typeof window !== "undefined"
+        ? localStorage.getItem(AUTH_STORAGE_KEY)
+        : null;
+    const certWithUser = { ...cert, userId };
     const res = await fetch(`${API_BASE}/certificates`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cert),
+      headers: getAuthHeaders(),
+      body: JSON.stringify(certWithUser),
     });
     if (!res.ok) throw new Error("Failed to add certificate");
     return CertificateDatabase.getAll();
@@ -104,7 +130,7 @@ export const CertificateDatabase = {
   update: async (cert: Certificate): Promise<Certificate[]> => {
     const res = await fetch(`${API_BASE}/certificates/${cert.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(cert),
     });
     if (!res.ok) throw new Error("Failed to update certificate");
@@ -114,6 +140,7 @@ export const CertificateDatabase = {
   delete: async (id: string): Promise<Certificate[]> => {
     const res = await fetch(`${API_BASE}/certificates/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Failed to delete certificate");
     return CertificateDatabase.getAll();
@@ -154,16 +181,23 @@ export const CriticDatabase = {
   initialize: async (): Promise<void> => {},
 
   getAll: async (): Promise<CriticSession[]> => {
-    const res = await fetch(`${API_BASE}/critic-sessions`);
+    const res = await fetch(`${API_BASE}/critic-sessions`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error("Failed to fetch critic sessions");
     return res.json();
   },
 
   addOrUpdate: async (session: CriticSession): Promise<CriticSession[]> => {
+    const userId =
+      typeof window !== "undefined"
+        ? localStorage.getItem(AUTH_STORAGE_KEY)
+        : null;
+    const sessionWithUser = { ...session, userId };
     const res = await fetch(`${API_BASE}/critic-sessions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(session),
+      headers: getAuthHeaders(),
+      body: JSON.stringify(sessionWithUser),
     });
     if (!res.ok) throw new Error("Failed to save critic session");
     return CriticDatabase.getAll();
@@ -172,6 +206,7 @@ export const CriticDatabase = {
   delete: async (id: string): Promise<CriticSession[]> => {
     const res = await fetch(`${API_BASE}/critic-sessions/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) throw new Error("Failed to delete critic session");
     return CriticDatabase.getAll();
