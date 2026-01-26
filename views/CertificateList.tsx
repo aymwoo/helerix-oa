@@ -475,7 +475,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     return (
       <div className="flex items-center justify-center h-full text-text-muted gap-2">
         <span className="material-symbols-outlined animate-spin">sync</span>
-        <span>正在载入专业档案...</span>
+        <span>正在载入证书...</span>
       </div>
     );
   }
@@ -484,7 +484,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     <div className="space-y-6 animate-in fade-in duration-500 pb-24 relative min-h-full">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-text-main">专业荣誉与成果</h1>
+          <h1 className="text-3xl font-bold text-text-main">证书登记</h1>
           <p className="text-text-muted text-sm mt-1">记录并管理您的获奖荣誉、课题结项、培训结业及职称资质。</p>
         </div>
         <div className="flex gap-3">
@@ -518,7 +518,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 <span className="material-symbols-outlined text-primary">auto_fix</span>
                 荣誉档案录入 Prompt 指令集
               </h3>
-              <p className="text-xs text-text-muted font-medium">定制 AI 对荣誉档案的 OCR 提取规则，修改将仅影响“专业档案”模块。</p>
+              <p className="text-xs text-text-muted font-medium">定制 AI 对荣誉档案的 OCR 提取规则，修改将仅影响“证书登记”模块。</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>

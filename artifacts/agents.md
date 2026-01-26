@@ -40,7 +40,7 @@ The **Helerix OA System** is an AI-powered Office Automation platform designed f
 │  │             │  │  │ Schedule | Users | Certificates | AI Tools  │ │  │
 │  │ - 教研排期   │  │  └─────────────────────────────────────────────┘ │  │
 │  │ - 教研员管理  │  │                                                 │  │
-│  │ - 专业档案   │  │       ┌─────────────────────────────────────┐  │  │
+│  │ - 证书管理  │  │       ┌─────────────────────────────────────┐  │  │
 │  │ - AI 试卷分析 │  │       │          View Components            │  │  │
 │  │ - AI 批评者  │  │       │  (12 specialized view modules)      │  │  │
 │  │ - 系统设置   │  │       └─────────────────────────────────────┘  │  │
@@ -281,7 +281,7 @@ interface CustomProvider {
 | Schedule | `Schedule.tsx` | 教研排期管理 | ❌ |
 | UserList | `UserList.tsx` | 教研员列表 | ❌ |
 | UserProfile | `UserProfile.tsx` | 用户详情页 | ❌ |
-| CertificateList | `CertificateList.tsx` | 专业档案列表 | ❌ |
+| CertificateList | `CertificateList.tsx` | 证书列表 | ❌ |
 | CertificateDetail | `CertificateDetail.tsx` | 证书详情 | ❌ |
 | **AIExamAnalysis** | `AIExamAnalysis.tsx` | **AI 试卷分析** | ✅ Vision + JSON |
 | **AICritic** | `AICritic.tsx` | **AI 批评者** | ✅ Chat + Streaming |

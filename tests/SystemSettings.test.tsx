@@ -163,7 +163,7 @@ describe('SystemSettings', () => {
       render(<SystemSettings />)
       fireEvent.click(screen.getByText('提示词工程'))
       expect(screen.getByText('试卷分析')).toBeInTheDocument()
-      expect(screen.getByText('专业档案识别')).toBeInTheDocument()
+      expect(screen.getByText('证书识别')).toBeInTheDocument()
       expect(screen.getByText('方案批评者')).toBeInTheDocument()
     })
   })
