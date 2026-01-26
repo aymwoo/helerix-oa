@@ -10,6 +10,7 @@ vi.mock('../db', () => ({
         initialize: vi.fn(() => Promise.resolve()),
         getAll: vi.fn(),
         add: vi.fn(),
+        updateLastLogin: vi.fn().mockResolvedValue(undefined),
     }
 }))
 
@@ -46,6 +47,7 @@ describe('Login Component', () => {
             department: '数学教研室',
             status: UserStatus.Active,
             avatarUrl: '/avatar.png',
+            lastLogin: Date.now(),
         },
         {
             id: 'user-2', 
@@ -56,6 +58,7 @@ describe('Login Component', () => {
             department: '语文教研室',
             status: UserStatus.Active,
             avatarUrl: '/avatar.png',
+            lastLogin: Date.now() - 1000,
         }
     ]
 
@@ -63,8 +66,6 @@ describe('Login Component', () => {
         vi.clearAllMocks()
         localStorageMock.clear()
         vi.mocked(UserDatabase.getAll).mockResolvedValue(mockUsers)
-        // Set recent logins so they show up in Quick Login
-        localStorageMock.setItem('helerix_recent_logins', JSON.stringify(['user-1', 'user-2']))
     })
 
     it('should render login page with logo', async () => {

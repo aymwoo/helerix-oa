@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import SystemSettings from '../views/SystemSettings'
-import { PromptDatabase } from '../db'
+import { PromptDatabase, AIProviderDatabase } from '../db'
 import { ToastProvider } from '../components/ToastContext'
 import { GoogleGenAI } from '@google/genai'
 import * as Diff from 'diff'
@@ -22,7 +22,15 @@ vi.mock('../db', () => ({
     add: vi.fn().mockResolvedValue([]),
     delete: vi.fn().mockResolvedValue([])
   },
-  // Add other databases if used
+  AIProviderDatabase: {
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getAll: vi.fn().mockResolvedValue([]),
+    add: vi.fn().mockResolvedValue([]),
+    delete: vi.fn().mockResolvedValue([])
+  },
+  DatabaseManager: {
+    exportDatabase: vi.fn().mockResolvedValue(new Uint8Array())
+  }
 }))
 
 // Mock localStorage
@@ -76,6 +84,7 @@ describe('SystemSettings', () => {
     vi.clearAllMocks()
     vi.mocked(PromptDatabase.getAll).mockResolvedValue([])
     vi.mocked(PromptDatabase.initialize).mockResolvedValue(undefined)
+    vi.mocked(AIProviderDatabase.getAll).mockResolvedValue([])
     localStorageMock.getItem.mockReturnValue(null)
     localStorageMock.setItem.mockImplementation(() => { })
   })
@@ -106,13 +115,15 @@ describe('SystemSettings', () => {
       expect(screen.getByText('连接 Qwen、DeepSeek、Ollama 等兼容接口。')).toBeInTheDocument()
     })
 
-    it('should load custom providers from localStorage', () => {
+    it('should load custom providers from database', async () => {
       const mockProviders = [{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'key', modelId: 'model' }]
-      localStorageMock.getItem.mockReturnValue(JSON.stringify(mockProviders))
+      vi.mocked(AIProviderDatabase.getAll).mockResolvedValue(mockProviders)
 
       render(<ToastProvider><SystemSettings currentUser={mockAdminUser} /></ToastProvider>)
-      // Should display the provider after loading
-      expect(screen.getByText('Test Provider')).toBeInTheDocument()
+      
+      await waitFor(() => {
+        expect(screen.getByText('Test Provider')).toBeInTheDocument()
+      })
     })
 
     it('should show empty state when no providers', () => {
@@ -127,7 +138,7 @@ describe('SystemSettings', () => {
       expect(screen.getByText('确认添加')).toBeInTheDocument()
     })
 
-    it('should add custom provider', () => {
+    it('should add custom provider', async () => {
       render(<ToastProvider><SystemSettings currentUser={mockAdminUser} /></ToastProvider>)
       fireEvent.click(screen.getByText(/添加提供商/))
 
@@ -136,30 +147,42 @@ describe('SystemSettings', () => {
       fireEvent.change(screen.getByPlaceholderText('sk-...'), { target: { value: 'test-key' } })
       fireEvent.change(screen.getByPlaceholderText('例如: gpt-4-turbo, llama3:latest'), { target: { value: 'test-model' } })
 
+      // Mock add to return new list
+      vi.mocked(AIProviderDatabase.add).mockResolvedValue([{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'test-key', modelId: 'test-model' }])
+
       fireEvent.click(screen.getByText('确认添加'))
 
-      expect(localStorageMock.setItem).toHaveBeenCalled()
-      expect(screen.getByText('Test Provider')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(AIProviderDatabase.add).toHaveBeenCalled()
+        expect(screen.getByText('Test Provider')).toBeInTheDocument()
+      })
     })
 
-    it('should delete custom provider', () => {
+    it('should delete custom provider', async () => {
       const mockProviders = [{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'key', modelId: 'model' }]
-      localStorageMock.getItem.mockReturnValue(JSON.stringify(mockProviders))
+      vi.mocked(AIProviderDatabase.getAll).mockResolvedValue(mockProviders)
+      vi.mocked(AIProviderDatabase.delete).mockResolvedValue([])
 
       // Mock window.confirm
       window.confirm = vi.fn(() => true)
 
       render(<ToastProvider><SystemSettings currentUser={mockAdminUser} /></ToastProvider>)
+      
+      await waitFor(() => expect(screen.getByText('Test Provider')).toBeInTheDocument());
+
       const deleteButton = screen.getByTitle('删除配置')
       fireEvent.click(deleteButton)
 
       expect(window.confirm).toHaveBeenCalled()
-      expect(localStorageMock.setItem).toHaveBeenCalled()
+      
+      await waitFor(() => {
+        expect(AIProviderDatabase.delete).toHaveBeenCalledWith('1')
+      })
     })
 
     it('should test custom connection', async () => {
       const mockProviders = [{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'key', modelId: 'model' }]
-      localStorageMock.getItem.mockReturnValue(JSON.stringify(mockProviders))
+      vi.mocked(AIProviderDatabase.getAll).mockResolvedValue(mockProviders)
 
       global.fetch = vi.fn(() =>
         Promise.resolve({
@@ -169,6 +192,9 @@ describe('SystemSettings', () => {
       )
 
       render(<ToastProvider><SystemSettings currentUser={mockAdminUser} /></ToastProvider>)
+      
+      await waitFor(() => expect(screen.getByText('Test Provider')).toBeInTheDocument())
+
       const testButton = screen.getByTitle('测试连接')
       fireEvent.click(testButton)
 
@@ -209,14 +235,17 @@ describe('SystemSettings', () => {
   })
 
   describe('Edge Cases', () => {
-    it('should handle localStorage parse error', () => {
-      localStorageMock.getItem.mockReturnValue('invalid json')
+    it('should handle database load error', async () => {
+      vi.mocked(AIProviderDatabase.getAll).mockRejectedValue(new Error("DB Error"))
 
       // Mock console.error to avoid noise
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
       render(<ToastProvider><SystemSettings currentUser={mockAdminUser} /></ToastProvider>)
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to parse custom providers", expect.any(SyntaxError))
+      
+      await waitFor(() => {
+         expect(consoleSpy).toHaveBeenCalledWith("Failed to load providers", expect.any(Error))
+      })
 
       consoleSpy.mockRestore()
     })
@@ -239,9 +268,9 @@ describe('SystemSettings', () => {
       expect(screen.queryByText('系统维护与备份')).not.toBeInTheDocument()
     })
 
-    it('should hide modification buttons in AI Config for non-admin', () => {
+    it('should hide modification buttons in AI Config for non-admin', async () => {
       const mockProviders = [{ id: '1', name: 'Test Provider', baseUrl: 'http://test.com', apiKey: 'key', modelId: 'model' }]
-      localStorageMock.getItem.mockReturnValue(JSON.stringify(mockProviders))
+      vi.mocked(AIProviderDatabase.getAll).mockResolvedValue(mockProviders)
 
       render(<ToastProvider><SystemSettings currentUser={mockNormalUser} /></ToastProvider>)
       
@@ -253,7 +282,9 @@ describe('SystemSettings', () => {
       expect(screen.queryByTitle('删除配置')).not.toBeInTheDocument()
       
       // Connection test should still be visible
-      expect(screen.getByTitle('测试连接')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTitle('测试连接')).toBeInTheDocument()
+      })
     })
 
     it('should still allow prompt engineering for non-admin', () => {

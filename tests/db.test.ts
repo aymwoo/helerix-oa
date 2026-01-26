@@ -44,7 +44,12 @@ describe("API Client - UserDatabase", () => {
 
     const users = await UserDatabase.getAll();
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/users");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/users",
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+    );
     expect(users).toEqual(mockUsers);
   });
 
@@ -53,7 +58,12 @@ describe("API Client - UserDatabase", () => {
 
     const user = await UserDatabase.getById("user-1");
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/users/user-1");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/users/user-1",
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+    );
     expect(user?.name).toBe("测试用户");
   });
 
@@ -81,7 +91,9 @@ describe("API Client - UserDatabase", () => {
       "/api/users",
       expect.objectContaining({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
         body: JSON.stringify(newUser),
       }),
     );
@@ -132,7 +144,12 @@ describe("API Client - CertificateDatabase", () => {
 
     const certs = await CertificateDatabase.getAll();
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/certificates");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/certificates",
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+    );
     expect(certs).toEqual(mockCerts);
   });
 
@@ -279,7 +296,12 @@ describe("API Client - CriticDatabase", () => {
 
     const sessions = await CriticDatabase.getAll();
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/critic-sessions");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/critic-sessions",
+      expect.objectContaining({
+        headers: expect.any(Object),
+      }),
+    );
   });
 
   it("should add or update session", async () => {
@@ -312,6 +334,7 @@ describe("API Client - CriticDatabase", () => {
       "/api/critic-sessions/session-1",
       expect.objectContaining({
         method: "DELETE",
+        headers: expect.any(Object),
       }),
     );
   });

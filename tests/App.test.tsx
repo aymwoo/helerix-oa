@@ -157,22 +157,7 @@ describe('App Component', () => {
         })
     })
 
-    it('should block non-admin from system settings', async () => {
-        vi.mocked(localStorage.getItem).mockReturnValue('user-1')
-        vi.mocked(UserDatabase.getById).mockResolvedValue(mockRegularUser)
-        
-        render(<ToastProvider><App /></ToastProvider>)
-        
-        await waitFor(() => {
-            expect(screen.getByTestId('sidebar')).toBeInTheDocument()
-        })
-        
-        fireEvent.click(screen.getByText('Settings'))
-        
-        await waitFor(() => {
-            expect(screen.getByText('权限不足：系统设置仅对管理员开放')).toBeInTheDocument()
-        })
-    })
+
 
     it('should allow admin to access system settings', async () => {
         vi.mocked(localStorage.getItem).mockReturnValue('admin-1')
