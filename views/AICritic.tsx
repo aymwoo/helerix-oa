@@ -86,7 +86,7 @@ const AICritic: React.FC = () => {
       }
     };
     persist();
-  }, [messages, currentSessionId]);
+  }, [messages, currentSessionId, sessions]);
 
   const startNewChat = () => {
     setCurrentSessionId(null);
@@ -411,7 +411,7 @@ const AICritic: React.FC = () => {
             {messages.map((msg) => (
               <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center shadow-sm border 
-                              ${msg.role === 'user' ? 'bg-primary text-white border-primary' : 'bg-slate-800 text-red-400 border-slate-700'}`}
+                              ${msg.role === 'user' ? 'bg-violet-600 text-white border-violet-600' : 'bg-slate-800 text-red-400 border-slate-700'}`}
                 >
                   <span className="material-symbols-outlined text-[20px]">
                     {msg.role === 'user' ? 'person' : 'psychology_alt'}
@@ -431,7 +431,7 @@ const AICritic: React.FC = () => {
                   )}
 
                   <div className={`px-6 py-4 rounded-3xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm
-                                  ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-sm' :
+                                  ${msg.role === 'user' ? 'bg-violet-600 text-white rounded-tr-sm' :
                       msg.isError ? 'bg-red-50 text-red-600 border border-red-100 rounded-tl-sm' :
                         'bg-background-light text-text-main border border-[#E5E7EB] rounded-tl-sm font-medium'}`}
                   >
@@ -495,7 +495,7 @@ const AICritic: React.FC = () => {
                 onClick={sendMessage}
                 disabled={(!inputValue.trim() && attachments.length === 0) || isTyping}
                 className={`p-3 rounded-full shrink-0 transition-all duration-300 shadow-md flex items-center justify-center
-                              ${(!inputValue.trim() && attachments.length === 0) || isTyping ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-violet-700 hover:scale-105 active:scale-95'}`}
+                              ${(!inputValue.trim() && attachments.length === 0) || isTyping ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-violet-600 text-white hover:bg-violet-700 hover:scale-105 active:scale-95'}`}
               >
                 <span className="material-symbols-outlined">send</span>
               </button>
