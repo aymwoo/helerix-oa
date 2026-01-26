@@ -54,7 +54,15 @@ const AIExamAnalysis: React.FC = () => {
       }
     };
     loadData();
+  }, []);
 
+  // Keep latest state in ref to avoid stale closure in paste handler
+  const stateRef = useRef({ customProviders, selectedProviderId, editingPrompt });
+  useEffect(() => {
+    stateRef.current = { customProviders, selectedProviderId, editingPrompt };
+  }, [customProviders, selectedProviderId, editingPrompt]);
+
+  useEffect(() => {
     const handlePaste = (event: ClipboardEvent) => {
       const items = event.clipboardData?.items;
       if (!items) return;
@@ -72,7 +80,7 @@ const AIExamAnalysis: React.FC = () => {
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, []); // Note: selectedProviderId is in state, but processFile reads it.
+  }, []); // Only bind once, processFile will read from ref
 
   const handlePromptChange = (id: string) => {
     const p = prompts.find(x => x.id === id);
@@ -142,7 +150,10 @@ const AIExamAnalysis: React.FC = () => {
       let resultData: any;
 
       // --- Custom OpenAI Compatible Provider Logic ---
-      const provider = customProviders.find(p => p.id === selectedProviderId);
+      // Use ref to get latest state even if specific closure is stale
+      const { customProviders: currentProviders, selectedProviderId: currentProviderId, editingPrompt: currentPrompt } = stateRef.current;
+      
+      const provider = currentProviders.find(p => p.id === currentProviderId);
       if (!provider) throw new Error("请选择一个有效的 AI 模型");
 
       let url = provider.baseUrl.replace(/\/$/, "");
@@ -163,7 +174,7 @@ const AIExamAnalysis: React.FC = () => {
       }, null, 2);
 
       const systemInstruction = "You are an expert exam analyzer. You MUST output strictly valid JSON matching the schema provided by the user. Do not include markdown formatting (like ```json) in your response.";
-      const fullPrompt = `${editingPrompt}\n\n[IMPORTANT] RETURN ONLY RAW JSON matching this schema:\n${jsonSchemaDesc}`;
+      const fullPrompt = `${currentPrompt}\n\n[IMPORTANT] RETURN ONLY RAW JSON matching this schema:\n${jsonSchemaDesc}`;
 
       const res = await fetch(url, {
         method: 'POST',
