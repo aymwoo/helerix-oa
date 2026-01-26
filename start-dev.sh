@@ -7,8 +7,9 @@ echo "║       🛠️  Helerix OA Development Mode       ║"
 echo "╚════════════════════════════════════════════╝"
 
 # Check Node.js
-if ! command -v node &> /dev/null; then
-    echo "Error: Node.js is not installed."
+if ! node -v &> /dev/null; then
+    echo "Error: Node.js is not found or not working."
+    echo "Current PATH: $PATH"
     exit 1
 fi
 
@@ -28,8 +29,9 @@ fi
 
 echo ""
 echo "════════════════════════════════════════════"
-echo "  Starting Development Server..."
-echo "  The app will be available at http://localhost:3000"
+echo "  Starting Development Server (HTTPS)..."
+echo "  The app will be available at https://0.0.0.0:3000"
+echo "  (Use your LAN IP for other devices)"
 echo "  Edit files to see changes instantly."
 echo "════════════════════════════════════════════"
 echo ""
