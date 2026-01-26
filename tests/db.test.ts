@@ -1,475 +1,485 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock the db module before importing
-vi.mock('../db', async () => {
-    const mockCertificates = [
-        {
-            id: 'cert-1',
-            name: '优秀教师奖',
-            issuer: '省教育厅',
-            issueDate: '2024-01-15',
-            level: '省级',
-            category: '荣誉表彰',
-            credentialUrl: '',
-            hours: 0,
-            timestamp: Date.now()
-        }
-    ]
+// Reset fetch mock before each test
+beforeEach(() => {
+  vi.clearAllMocks();
+  global.fetch = vi.fn();
+});
 
-    const mockUsers = [
-        {
-            id: 'user-1',
-            name: '测试用户',
-            email: 'test@example.com',
-            roles: ['数学教研员'],
-            department: '数学教研室',
-            status: '在线',
-            avatarUrl: 'https://example.com/avatar.png'
-        }
-    ]
-
-    const mockPrompts = [
-        {
-            id: 'prompt-1',
-            name: '默认提示词',
-            content: '请分析...',
-            isDefault: true,
-            timestamp: Date.now(),
-            category: 'exam'
-        }
-    ]
-
-    const mockEvents = [
-        {
-            id: 'event-1',
-            title: '教研会议',
-            date: '2024-06-15',
-            startTime: '09:00',
-            endTime: '11:00',
-            type: 'meeting',
-            description: '讨论会',
-            participants: []
-        }
-    ]
-
-    return {
-        CertificateDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([...mockCertificates])),
-            getById: vi.fn((id: string) => Promise.resolve(mockCertificates.find(c => c.id === id) || null)),
-            add: vi.fn((cert: any) => {
-                mockCertificates.push(cert)
-                return Promise.resolve([...mockCertificates])
-            }),
-            update: vi.fn((cert: any) => {
-                const idx = mockCertificates.findIndex(c => c.id === cert.id)
-                if (idx >= 0) mockCertificates[idx] = cert
-                return Promise.resolve([...mockCertificates])
-            }),
-            delete: vi.fn((id: string) => {
-                const idx = mockCertificates.findIndex(c => c.id === id)
-                if (idx >= 0) mockCertificates.splice(idx, 1)
-                return Promise.resolve([...mockCertificates])
-            })
-        },
-        UserDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([...mockUsers])),
-            getById: vi.fn((id: string) => Promise.resolve(mockUsers.find(u => u.id === id) || null)),
-            add: vi.fn((user: any) => {
-                mockUsers.push(user)
-                return Promise.resolve([...mockUsers])
-            }),
-            update: vi.fn((user: any) => {
-                const idx = mockUsers.findIndex(u => u.id === user.id)
-                if (idx >= 0) mockUsers[idx] = user
-                return Promise.resolve([...mockUsers])
-            }),
-            delete: vi.fn((id: string) => {
-                const idx = mockUsers.findIndex(u => u.id === id)
-                if (idx >= 0) mockUsers.splice(idx, 1)
-                return Promise.resolve([...mockUsers])
-            })
-        },
-        PromptDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn((category?: string) =>
-                Promise.resolve(category ? mockPrompts.filter(p => p.category === category) : [...mockPrompts])
-            ),
-            add: vi.fn((prompt: any) => {
-                mockPrompts.push(prompt)
-                return Promise.resolve([...mockPrompts])
-            }),
-            delete: vi.fn((id: string, category: string) => {
-                const idx = mockPrompts.findIndex(p => p.id === id)
-                if (idx >= 0) mockPrompts.splice(idx, 1)
-                return Promise.resolve([...mockPrompts])
-            })
-        },
-        EventsDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([...mockEvents])),
-            add: vi.fn((event: any) => {
-                mockEvents.push(event)
-                return Promise.resolve([...mockEvents])
-            }),
-            delete: vi.fn((id: string) => {
-                const idx = mockEvents.findIndex(e => e.id === id)
-                if (idx >= 0) mockEvents.splice(idx, 1)
-                return Promise.resolve([...mockEvents])
-            })
-        },
-        FileManager: {
-            initialize: vi.fn(() => Promise.resolve()),
-            saveFile: vi.fn(() => Promise.resolve('file://mock-file-id')),
-            getFile: vi.fn((uri: string) => Promise.resolve({
-                id: 'mock-file-id',
-                name: 'test.png',
-                mimeType: 'image/png',
-                data: 'base64data',
-                size: 1024,
-                timestamp: Date.now()
-            })),
-            resolveToDataUrl: vi.fn((uri: string) => Promise.resolve('data:image/png;base64,mockdata')),
-            deleteFile: vi.fn(() => Promise.resolve())
-        },
-        DatabaseManager: {
-            exportDatabase: vi.fn(() => Promise.resolve(new Uint8Array([1, 2, 3]))),
-            importDatabase: vi.fn(() => Promise.resolve(true))
-        },
-        CriticDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([])),
-            addOrUpdate: vi.fn((session: any) => Promise.resolve([session])),
-            delete: vi.fn(() => Promise.resolve([]))
-        },
-        EventTypeDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([])),
-            add: vi.fn((name: string, colorClass: string) => Promise.resolve([{ id: 'et-1', name, colorClass }])),
-            delete: vi.fn(() => Promise.resolve([]))
-        },
-        ExamAnalysisDatabase: {
-            initialize: vi.fn(() => Promise.resolve()),
-            getAll: vi.fn(() => Promise.resolve([])),
-            add: vi.fn((analysis: any) => Promise.resolve([analysis])),
-            delete: vi.fn(() => Promise.resolve([]))
-        }
-    }
-})
+// Helper to mock fetch responses
+const mockFetch = (data: any, ok = true, status = 200) => {
+  return vi.mocked(global.fetch).mockResolvedValueOnce({
+    ok,
+    status,
+    json: () => Promise.resolve(data),
+    text: () => Promise.resolve(JSON.stringify(data)),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+  } as Response);
+};
 
 import {
-    CertificateDatabase,
-    UserDatabase,
-    PromptDatabase,
-    EventsDatabase,
-    FileManager,
-    DatabaseManager,
-    CriticDatabase,
-    EventTypeDatabase,
-    ExamAnalysisDatabase
-} from '../db'
+  UserDatabase,
+  CertificateDatabase,
+  PromptDatabase,
+  EventsDatabase,
+  FileManager,
+  DatabaseManager,
+  CriticDatabase,
+  EventTypeDatabase,
+  ExamAnalysisDatabase,
+} from "../db";
 
-describe('Database - CertificateDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+describe("API Client - UserDatabase", () => {
+  const mockUsers = [
+    {
+      id: "user-1",
+      name: "测试用户",
+      email: "test@example.com",
+      roles: ["数学教研员"],
+    },
+  ];
 
-    it('should initialize database', async () => {
-        await CertificateDatabase.initialize()
-        expect(CertificateDatabase.initialize).toHaveBeenCalled()
-    })
+  it("should fetch all users", async () => {
+    mockFetch(mockUsers);
 
-    it('should get all certificates', async () => {
-        const certs = await CertificateDatabase.getAll()
-        expect(Array.isArray(certs)).toBe(true)
-        expect(certs.length).toBeGreaterThan(0)
-    })
+    const users = await UserDatabase.getAll();
 
-    it('should get certificate by id', async () => {
-        const cert = await CertificateDatabase.getById('cert-1')
-        expect(cert).not.toBeNull()
-        expect(cert?.name).toBe('优秀教师奖')
-    })
+    expect(global.fetch).toHaveBeenCalledWith("/api/users");
+    expect(users).toEqual(mockUsers);
+  });
 
-    it('should return null for non-existent certificate', async () => {
-        const cert = await CertificateDatabase.getById('non-existent')
-        expect(cert).toBeNull()
-    })
+  it("should fetch user by id", async () => {
+    mockFetch(mockUsers[0]);
 
-    it('should add new certificate', async () => {
-        const newCert = {
-            id: 'cert-2',
-            name: '新证书',
-            issuer: '测试单位',
-            issueDate: '2024-06-01',
-            level: '市级',
-            category: '培训结业',
-            hours: 20,
-            timestamp: Date.now()
-        }
-        const result = await CertificateDatabase.add(newCert as any)
-        expect(CertificateDatabase.add).toHaveBeenCalledWith(newCert)
-        expect(result.length).toBeGreaterThan(1)
-    })
+    const user = await UserDatabase.getById("user-1");
 
-    it('should update certificate', async () => {
-        const updatedCert = {
-            id: 'cert-1',
-            name: '更新后的证书',
-            issuer: '省教育厅',
-            issueDate: '2024-01-15',
-            level: '省级',
-            category: '荣誉表彰',
-            hours: 0,
-            timestamp: Date.now()
-        }
-        await CertificateDatabase.update(updatedCert as any)
-        expect(CertificateDatabase.update).toHaveBeenCalledWith(updatedCert)
-    })
+    expect(global.fetch).toHaveBeenCalledWith("/api/users/user-1");
+    expect(user?.name).toBe("测试用户");
+  });
 
-    it('should delete certificate', async () => {
-        await CertificateDatabase.delete('cert-1')
-        expect(CertificateDatabase.delete).toHaveBeenCalledWith('cert-1')
-    })
-})
+  it("should return null for non-existent user", async () => {
+    mockFetch({}, false, 404);
 
-describe('Database - UserDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+    const user = await UserDatabase.getById("non-existent");
 
-    it('should get all users', async () => {
-        const users = await UserDatabase.getAll()
-        expect(Array.isArray(users)).toBe(true)
-    })
+    expect(user).toBeNull();
+  });
 
-    it('should get user by id', async () => {
-        const user = await UserDatabase.getById('user-1')
-        expect(user).not.toBeNull()
-        expect(user?.name).toBe('测试用户')
-    })
+  it("should add new user", async () => {
+    const newUser = {
+      id: "user-2",
+      name: "新用户",
+      email: "new@test.com",
+      roles: [],
+    };
+    mockFetch(newUser); // POST response
+    mockFetch([...mockUsers, newUser]); // getAll response
 
-    it('should add new user', async () => {
-        const newUser = {
-            id: 'user-2',
-            name: '新用户',
-            email: 'new@example.com',
-            roles: ['语文教研员'],
-            department: '语文教研室',
-            status: '在线',
-            avatarUrl: ''
-        }
-        await UserDatabase.add(newUser as any)
-        expect(UserDatabase.add).toHaveBeenCalledWith(newUser)
-    })
+    await UserDatabase.add(newUser as any);
 
-    it('should update user', async () => {
-        const updatedUser = {
-            id: 'user-1',
-            name: '更新后的用户',
-            email: 'test@example.com',
-            roles: ['数学教研员'],
-            department: '数学教研室',
-            status: '离线',
-            avatarUrl: ''
-        }
-        await UserDatabase.update(updatedUser as any)
-        expect(UserDatabase.update).toHaveBeenCalledWith(updatedUser)
-    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/users",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      }),
+    );
+  });
 
-    it('should delete user', async () => {
-        await UserDatabase.delete('user-1')
-        expect(UserDatabase.delete).toHaveBeenCalledWith('user-1')
-    })
-})
+  it("should update user", async () => {
+    const updated = { ...mockUsers[0], name: "更新后" };
+    mockFetch({ success: true }); // PUT response
+    mockFetch([updated]); // getAll response
 
-describe('Database - PromptDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+    await UserDatabase.update(updated as any);
 
-    it('should get all prompts', async () => {
-        const prompts = await PromptDatabase.getAll()
-        expect(Array.isArray(prompts)).toBe(true)
-    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/users/user-1",
+      expect.objectContaining({
+        method: "PUT",
+      }),
+    );
+  });
 
-    it('should filter prompts by category', async () => {
-        const examPrompts = await PromptDatabase.getAll('exam')
-        expect(Array.isArray(examPrompts)).toBe(true)
-    })
+  it("should delete user", async () => {
+    mockFetch({ success: true }); // DELETE response
+    mockFetch([]); // getAll response
 
-    it('should add new prompt', async () => {
-        const newPrompt = {
-            id: 'prompt-2',
-            name: '新提示词',
-            content: '测试内容',
-            isDefault: false,
-            timestamp: Date.now(),
-            category: 'certificate'
-        }
-        await PromptDatabase.add(newPrompt as any)
-        expect(PromptDatabase.add).toHaveBeenCalledWith(newPrompt)
-    })
+    await UserDatabase.delete("user-1");
 
-    it('should delete prompt', async () => {
-        await PromptDatabase.delete('prompt-1', 'exam')
-        expect(PromptDatabase.delete).toHaveBeenCalledWith('prompt-1', 'exam')
-    })
-})
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/users/user-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
 
-describe('Database - EventsDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+describe("API Client - CertificateDatabase", () => {
+  const mockCerts = [
+    {
+      id: "cert-1",
+      name: "优秀教师奖",
+      issuer: "省教育厅",
+      timestamp: Date.now(),
+    },
+  ];
 
-    it('should get all events', async () => {
-        const events = await EventsDatabase.getAll()
-        expect(Array.isArray(events)).toBe(true)
-    })
+  it("should fetch all certificates", async () => {
+    mockFetch(mockCerts);
 
-    it('should add new event', async () => {
-        const newEvent = {
-            id: 'event-2',
-            title: '新会议',
-            date: '2024-07-01',
-            startTime: '14:00',
-            endTime: '16:00',
-            type: 'training',
-            description: '培训',
-            participants: ['张老师']
-        }
-        await EventsDatabase.add(newEvent as any)
-        expect(EventsDatabase.add).toHaveBeenCalledWith(newEvent)
-    })
+    const certs = await CertificateDatabase.getAll();
 
-    it('should delete event', async () => {
-        await EventsDatabase.delete('event-1')
-        expect(EventsDatabase.delete).toHaveBeenCalledWith('event-1')
-    })
-})
+    expect(global.fetch).toHaveBeenCalledWith("/api/certificates");
+    expect(certs).toEqual(mockCerts);
+  });
 
-describe('Database - FileManager', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+  it("should fetch certificate by id", async () => {
+    mockFetch(mockCerts[0]);
 
-    it('should save file and return URI', async () => {
-        const mockFile = new File(['test'], 'test.png', { type: 'image/png' })
-        const uri = await FileManager.saveFile(mockFile)
-        expect(uri).toContain('file://')
-    })
+    const cert = await CertificateDatabase.getById("cert-1");
 
-    it('should get file by URI', async () => {
-        const file = await FileManager.getFile('file://test-id')
-        expect(file).not.toBeNull()
-        expect(file?.name).toBe('test.png')
-    })
+    expect(cert?.name).toBe("优秀教师奖");
+  });
 
-    it('should resolve file to data URL', async () => {
-        const dataUrl = await FileManager.resolveToDataUrl('file://test-id')
-        expect(dataUrl).toContain('data:')
-    })
+  it("should add certificate", async () => {
+    const newCert = { id: "cert-2", name: "新证书", timestamp: Date.now() };
+    mockFetch(newCert);
+    mockFetch([...mockCerts, newCert]);
 
-    it('should delete file', async () => {
-        await FileManager.deleteFile('file://test-id')
-        expect(FileManager.deleteFile).toHaveBeenCalled()
-    })
-})
+    await CertificateDatabase.add(newCert as any);
 
-describe('Database - DatabaseManager', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/certificates",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
 
-    it('should export database as Uint8Array', async () => {
-        const data = await DatabaseManager.exportDatabase()
-        expect(data).toBeInstanceOf(Uint8Array)
-    })
+  it("should delete certificate", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
 
-    it('should import database', async () => {
-        const success = await DatabaseManager.importDatabase(new Uint8Array([1, 2, 3]))
-        expect(success).toBe(true)
-    })
-})
+    await CertificateDatabase.delete("cert-1");
 
-describe('Database - CriticDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/certificates/cert-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
 
-    it('should get all sessions', async () => {
-        const sessions = await CriticDatabase.getAll()
-        expect(Array.isArray(sessions)).toBe(true)
-    })
+describe("API Client - PromptDatabase", () => {
+  const mockPrompts = [
+    { id: "prompt-1", name: "默认提示", category: "exam", isDefault: true },
+  ];
 
-    it('should add or update session', async () => {
-        const session = {
-            id: 'session-1',
-            title: '测试会话',
-            timestamp: Date.now(),
-            messages: []
-        }
-        const result = await CriticDatabase.addOrUpdate(session as any)
-        expect(CriticDatabase.addOrUpdate).toHaveBeenCalledWith(session)
-    })
+  it("should fetch all prompts", async () => {
+    mockFetch(mockPrompts);
 
-    it('should delete session', async () => {
-        await CriticDatabase.delete('session-1')
-        expect(CriticDatabase.delete).toHaveBeenCalledWith('session-1')
-    })
-})
+    const prompts = await PromptDatabase.getAll();
 
-describe('Database - EventTypeDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+    expect(global.fetch).toHaveBeenCalledWith("/api/prompts");
+  });
 
-    it('should get all event types', async () => {
-        const types = await EventTypeDatabase.getAll()
-        expect(Array.isArray(types)).toBe(true)
-    })
+  it("should fetch prompts by category", async () => {
+    mockFetch(mockPrompts.filter((p) => p.category === "exam"));
 
-    it('should add event type', async () => {
-        const result = await EventTypeDatabase.add('培训', 'bg-blue-500')
-        expect(EventTypeDatabase.add).toHaveBeenCalledWith('培训', 'bg-blue-500')
-    })
+    await PromptDatabase.getAll("exam");
 
-    it('should delete event type', async () => {
-        await EventTypeDatabase.delete('et-1')
-        expect(EventTypeDatabase.delete).toHaveBeenCalledWith('et-1')
-    })
-})
+    expect(global.fetch).toHaveBeenCalledWith("/api/prompts?category=exam");
+  });
 
-describe('Database - ExamAnalysisDatabase', () => {
-    beforeEach(() => {
-        vi.clearAllMocks()
-    })
+  it("should add prompt", async () => {
+    const newPrompt = {
+      id: "prompt-2",
+      name: "新提示",
+      category: "certificate",
+    };
+    mockFetch(newPrompt);
+    mockFetch([newPrompt]);
 
-    it('should get all analyses', async () => {
-        const analyses = await ExamAnalysisDatabase.getAll()
-        expect(Array.isArray(analyses)).toBe(true)
-    })
+    await PromptDatabase.add(newPrompt as any);
 
-    it('should add analysis', async () => {
-        const analysis = {
-            id: 'analysis-1',
-            timestamp: Date.now(),
-            subject: '数学',
-            title: '期末考试',
-            grade: '初三',
-            difficulty: 3,
-            summary: '总结',
-            knowledgePoints: ['函数', '代数'],
-            itemAnalysis: [],
-            teachingAdvice: '建议'
-        }
-        await ExamAnalysisDatabase.add(analysis as any)
-        expect(ExamAnalysisDatabase.add).toHaveBeenCalledWith(analysis)
-    })
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/prompts",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
 
-    it('should delete analysis', async () => {
-        await ExamAnalysisDatabase.delete('analysis-1')
-        expect(ExamAnalysisDatabase.delete).toHaveBeenCalledWith('analysis-1')
-    })
-})
+  it("should delete prompt", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
+
+    await PromptDatabase.delete("prompt-1", "exam");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/prompts/prompt-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
+
+describe("API Client - EventsDatabase", () => {
+  const mockEvents = [{ id: "event-1", title: "会议", date: "2024-01-15" }];
+
+  it("should fetch all events", async () => {
+    mockFetch(mockEvents);
+
+    const events = await EventsDatabase.getAll();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/events");
+    expect(events).toEqual(mockEvents);
+  });
+
+  it("should add event", async () => {
+    const newEvent = { id: "event-2", title: "新会议" };
+    mockFetch(newEvent);
+    mockFetch([...mockEvents, newEvent]);
+
+    await EventsDatabase.add(newEvent as any);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/events",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
+  it("should delete event", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
+
+    await EventsDatabase.delete("event-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/events/event-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
+
+describe("API Client - CriticDatabase", () => {
+  const mockSessions = [{ id: "session-1", title: "会话", messages: [] }];
+
+  it("should fetch all sessions", async () => {
+    mockFetch(mockSessions);
+
+    const sessions = await CriticDatabase.getAll();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/critic-sessions");
+  });
+
+  it("should add or update session", async () => {
+    const session = {
+      id: "session-2",
+      title: "新会话",
+      messages: [],
+      timestamp: Date.now(),
+    };
+    mockFetch(session);
+    mockFetch([session]);
+
+    await CriticDatabase.addOrUpdate(session as any);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/critic-sessions",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
+  it("should delete session", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
+
+    await CriticDatabase.delete("session-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/critic-sessions/session-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
+
+describe("API Client - EventTypeDatabase", () => {
+  it("should fetch all event types", async () => {
+    mockFetch([{ id: "et-1", name: "会议", colorClass: "bg-blue-500" }]);
+
+    await EventTypeDatabase.getAll();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/event-types");
+  });
+
+  it("should add event type", async () => {
+    mockFetch({ id: "et-2", name: "培训", colorClass: "bg-green-500" });
+    mockFetch([]);
+
+    await EventTypeDatabase.add("培训", "bg-green-500");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/event-types",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ name: "培训", colorClass: "bg-green-500" }),
+      }),
+    );
+  });
+
+  it("should delete event type", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
+
+    await EventTypeDatabase.delete("et-1");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/event-types/et-1", {
+      method: "DELETE",
+    });
+  });
+});
+
+describe("API Client - ExamAnalysisDatabase", () => {
+  const mockAnalysis = {
+    id: "analysis-1",
+    title: "期末",
+    subject: "数学",
+    knowledgePoints: [],
+    itemAnalysis: [],
+  };
+
+  it("should fetch all analyses", async () => {
+    mockFetch([mockAnalysis]);
+
+    await ExamAnalysisDatabase.getAll();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/exam-analyses");
+  });
+
+  it("should add analysis", async () => {
+    mockFetch(mockAnalysis);
+    mockFetch([mockAnalysis]);
+
+    await ExamAnalysisDatabase.add(mockAnalysis as any);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/exam-analyses",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
+  it("should delete analysis", async () => {
+    mockFetch({ success: true });
+    mockFetch([]);
+
+    await ExamAnalysisDatabase.delete("analysis-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/exam-analyses/analysis-1",
+      expect.objectContaining({
+        method: "DELETE",
+      }),
+    );
+  });
+});
+
+describe("API Client - FileManager", () => {
+  it("should upload file", async () => {
+    mockFetch({ uri: "file://new-file-id" });
+
+    const mockFile = new File(["test"], "test.png", { type: "image/png" });
+    const uri = await FileManager.saveFile(mockFile);
+
+    // Wait for FileReader
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(uri).toContain("file://");
+  });
+
+  it("should get file by URI", async () => {
+    const mockFile = {
+      id: "file-1",
+      name: "test.png",
+      mimeType: "image/png",
+      data: "base64",
+    };
+    mockFetch(mockFile);
+
+    const file = await FileManager.getFile("file://file-1");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/files/file-1");
+    expect(file?.name).toBe("test.png");
+  });
+
+  it("should return null for invalid URI", async () => {
+    const file = await FileManager.getFile("https://example.com/file");
+    expect(file).toBeNull();
+  });
+
+  it("should resolve file to data URL", async () => {
+    const mockFile = {
+      id: "file-1",
+      name: "test.png",
+      mimeType: "image/png",
+      data: "base64data",
+    };
+    mockFetch(mockFile);
+
+    const dataUrl = await FileManager.resolveToDataUrl("file://file-1");
+
+    expect(dataUrl).toBe("data:image/png;base64,base64data");
+  });
+
+  it("should delete file", async () => {
+    mockFetch({ success: true });
+
+    await FileManager.deleteFile("file://file-1");
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/files/file-1", {
+      method: "DELETE",
+    });
+  });
+});
+
+describe("API Client - DatabaseManager", () => {
+  it("should export database", async () => {
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+    } as Response);
+
+    const data = await DatabaseManager.exportDatabase();
+
+    expect(global.fetch).toHaveBeenCalledWith("/api/database/export");
+    expect(data).toBeInstanceOf(Uint8Array);
+  });
+
+  it("should warn on import attempt", async () => {
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await DatabaseManager.importDatabase(new Uint8Array());
+
+    expect(result).toBe(false);
+    expect(consoleSpy).toHaveBeenCalledWith(
+      "Database import is not supported in API mode",
+    );
+
+    consoleSpy.mockRestore();
+  });
+});
