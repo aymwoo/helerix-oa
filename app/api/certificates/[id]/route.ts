@@ -7,13 +7,35 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const cert = db.prepare("SELECT * FROM certificates WHERE id = ?").get(id);
+    const userId = request.headers.get("x-user-id");
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get requester info
+    const requester = db
+      .prepare("SELECT * FROM users WHERE id = ?")
+      .get(userId) as any;
+    if (!requester) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const isAdmin = JSON.parse(requester.roles || "[]").includes("系统管理员");
+
+    const cert = db
+      .prepare("SELECT * FROM certificates WHERE id = ?")
+      .get(id) as any;
     if (!cert) {
       return NextResponse.json(
         { error: "Certificate not found" },
         { status: 404 },
       );
     }
+
+    // Check ownership
+    if (!isAdmin && cert.userId && cert.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     return NextResponse.json(cert);
   } catch (err) {
     console.error(err);
@@ -30,21 +52,46 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const cert = await request.json();
+    const certData = await request.json();
+    const userId = request.headers.get("x-user-id");
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get requester info
+    const requester = db
+      .prepare("SELECT * FROM users WHERE id = ?")
+      .get(userId) as any;
+    if (!requester)
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const isAdmin = JSON.parse(requester.roles || "[]").includes("系统管理员");
+
+    // Get existing cert to check ownership
+    const existing = db
+      .prepare("SELECT * FROM certificates WHERE id = ?")
+      .get(id) as any;
+    if (!existing)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (!isAdmin && existing.userId && existing.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     db.prepare(
       `
       UPDATE certificates SET name=?, issuer=?, issueDate=?, level=?, category=?, credentialUrl=?, hours=?, timestamp=?
       WHERE id=?
     `,
     ).run(
-      cert.name,
-      cert.issuer,
-      cert.issueDate,
-      cert.level,
-      cert.category,
-      cert.credentialUrl || "",
-      cert.hours || 0,
-      cert.timestamp,
+      certData.name,
+      certData.issuer,
+      certData.issueDate,
+      certData.level,
+      certData.category,
+      certData.credentialUrl || "",
+      certData.hours || 0,
+      certData.timestamp,
       id,
     );
     return NextResponse.json({ success: true });
@@ -63,6 +110,27 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const userId = request.headers.get("x-user-id");
+
+    if (!userId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const requester = db
+      .prepare("SELECT * FROM users WHERE id = ?")
+      .get(userId) as any;
+    const isAdmin =
+      requester && JSON.parse(requester.roles || "[]").includes("系统管理员");
+
+    const existing = db
+      .prepare("SELECT * FROM certificates WHERE id = ?")
+      .get(id) as any;
+    if (!existing)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    if (!isAdmin && existing.userId && existing.userId !== userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     db.prepare("DELETE FROM certificates WHERE id = ?").run(id);
     return NextResponse.json({ success: true });
   } catch (err) {

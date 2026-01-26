@@ -33,6 +33,7 @@ export interface User {
   password?: string;
   joinDate?: string;
   expertise?: string[];
+  lastLogin?: number;
 }
 
 export interface Project {

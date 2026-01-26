@@ -22,7 +22,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [quickPassword, setQuickPassword] = useState('');
   const [recentLoginIds, setRecentLoginIds] = useState<string[]>([]);
   
-  const RECENT_LOGINS_KEY = 'helerix_recent_logins';
+
 
   // Registration form state
   const [regName, setRegName] = useState('');
@@ -39,10 +39,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const allUsers = await UserDatabase.getAll();
       setUsers(allUsers);
       
-      const recentStr = localStorage.getItem(RECENT_LOGINS_KEY);
-      if (recentStr) {
-        setRecentLoginIds(JSON.parse(recentStr));
-      }
+      setUsers(allUsers);
+      
+      // Sort users by lastLogin to find recent ones
+      const recent = allUsers
+        .filter(u => u.lastLogin)
+        .sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0))
+        .map(u => u.id);
+      setRecentLoginIds(recent);
       
       // If no users exist, switch to registration mode
       if (allUsers.length === 0) {
@@ -59,12 +63,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     loadUsers();
   }, []);
 
-  const addToRecentLogins = (userId: string) => {
-    const currentRecent = [...recentLoginIds];
-    const filtered = currentRecent.filter(id => id !== userId);
-    const updated = [userId, ...filtered].slice(0, 5); // Keep last 5
-    setRecentLoginIds(updated);
-    localStorage.setItem(RECENT_LOGINS_KEY, JSON.stringify(updated));
+  const addToRecentLogins = async (userId: string) => {
+    try {
+      await UserDatabase.updateLastLogin(userId);
+      const updatedUsers = await UserDatabase.getAll();
+      setUsers(updatedUsers);
+      const recent = updatedUsers
+        .filter(u => u.lastLogin)
+        .sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0))
+        .map(u => u.id);
+      setRecentLoginIds(recent);
+    } catch (e) {
+      console.error("Failed to update last login", e);
+    }
   };
 
   const handleLoginSuccess = (user: User) => {

@@ -27,7 +27,8 @@ db.exec(`
     phone TEXT,
     password TEXT,
     joinDate TEXT,
-    expertise TEXT
+    expertise TEXT,
+    lastLogin INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS certificates (
@@ -99,12 +100,31 @@ db.exec(`
     name TEXT,
     colorClass TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS ai_providers (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    baseUrl TEXT NOT NULL,
+    apiKey TEXT,
+    modelId TEXT,
+    timestamp INTEGER,
+    userId TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_usage (
+    agentId TEXT PRIMARY KEY,
+    count INTEGER DEFAULT 0,
+    lastUsed INTEGER
+  );
 `);
 
 // Simple migration logic
 const usersTableInfo = db.prepare("PRAGMA table_info(users)").all() as any[];
 if (!usersTableInfo.some((col) => col.name === "password")) {
   db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '123456'");
+}
+if (!usersTableInfo.some((col) => col.name === "lastLogin")) {
+  db.exec("ALTER TABLE users ADD COLUMN lastLogin INTEGER");
 }
 
 const certsTableInfo = db

@@ -8,6 +8,7 @@ import {
   EventTypeTag,
   StoredFile,
   UserRole,
+  CustomProvider,
 } from "./types";
 
 const API_BASE = "/api";
@@ -88,6 +89,14 @@ export const UserDatabase = {
     });
     if (!res.ok) throw new Error("Failed to batch reset passwords");
     return UserDatabase.getAll();
+  },
+
+  updateLastLogin: async (id: string): Promise<void> => {
+    const res = await fetch(`${API_BASE}/users/${id}/last-login`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to update last login");
   },
 };
 
@@ -296,6 +305,69 @@ export const EventTypeDatabase = {
     });
     if (!res.ok) throw new Error("Failed to delete event type");
     return EventTypeDatabase.getAll();
+  },
+};
+
+// ============ AI PROVIDERS ============
+export const AIProviderDatabase = {
+  initialize: async (): Promise<void> => {},
+
+  getAll: async (): Promise<CustomProvider[]> => {
+    const res = await fetch(`${API_BASE}/ai-providers`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch AI providers");
+    return res.json();
+  },
+
+  add: async (provider: CustomProvider): Promise<CustomProvider[]> => {
+    const res = await fetch(`${API_BASE}/ai-providers`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(provider),
+    });
+    if (!res.ok) throw new Error("Failed to add AI provider");
+    return AIProviderDatabase.getAll();
+  },
+
+  update: async (provider: CustomProvider): Promise<CustomProvider[]> => {
+    const res = await fetch(`${API_BASE}/ai-providers/${provider.id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(provider),
+    });
+    if (!res.ok) throw new Error("Failed to update AI provider");
+    return AIProviderDatabase.getAll();
+  },
+
+  delete: async (id: string): Promise<CustomProvider[]> => {
+    const res = await fetch(`${API_BASE}/ai-providers/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to delete AI provider");
+    return AIProviderDatabase.getAll();
+  },
+};
+
+// ============ AGENT USAGE ============
+export const AgentUsageDatabase = {
+  getStats: async (): Promise<
+    Record<string, { count: number; lastUsed?: number }>
+  > => {
+    const res = await fetch(`${API_BASE}/agent-usage`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to fetch agent usage");
+    return res.json();
+  },
+
+  recordUsage: async (agentId: string): Promise<void> => {
+    await fetch(`${API_BASE}/agent-usage`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ agentId }),
+    });
   },
 };
 

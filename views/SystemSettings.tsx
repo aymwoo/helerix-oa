@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CustomProvider, PromptTemplate, PromptCategory, User, UserRole } from '../types';
-import { DatabaseManager, PromptDatabase } from '../db';
+import { DatabaseManager, PromptDatabase, AIProviderDatabase } from '../db';
 import * as Diff from 'diff';
 import { useToast } from '../components/ToastContext';
 
@@ -47,16 +47,18 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
   const [pastePreviewProviders, setPastePreviewProviders] = useState<CustomProvider[]>([]);
   const [pastePreviewError, setPastePreviewError] = useState<string | null>(null);
 
-  // Load custom providers from local storage on mount
+  // Load custom providers from database on mount
   useEffect(() => {
-    const saved = localStorage.getItem('helerix_custom_providers');
-    if (saved) {
+    const loadProviders = async () => {
       try {
-        setCustomProviders(JSON.parse(saved));
+        const data = await AIProviderDatabase.getAll();
+        setCustomProviders(data);
       } catch (e) {
-        console.error("Failed to parse custom providers", e);
+        console.error("Failed to load providers", e);
+        error("加载 AI 提供商失败");
       }
-    }
+    };
+    loadProviders();
   }, []);
 
   const fetchPrompts = async () => {
@@ -85,35 +87,44 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
     }
   }, [activeTab, selectedPromptCategory]);
 
-  const saveCustomProviders = (providers: CustomProvider[]) => {
+  const saveCustomProviders = async (providers: CustomProvider[]) => {
+    // This helper is used when we want to just update the local state 
+    // but usually we should call the specific add/update/delete DB methods.
     setCustomProviders(providers);
-    localStorage.setItem('helerix_custom_providers', JSON.stringify(providers));
   };
 
-  const handleAddCustomProvider = () => {
+  const handleAddCustomProvider = async () => {
     if (!newProvider.name || !newProvider.baseUrl || !newProvider.apiKey) {
       warning("请填写必要信息 (名称, Base URL, API Key)");
       return;
     }
 
-    if (editingProviderId) {
-      // Update existing
-      const updatedProviders = customProviders.map(p =>
-        p.id === editingProviderId ? { ...newProvider, id: editingProviderId } : p
-      );
-      saveCustomProviders(updatedProviders);
-      setEditingProviderId(null);
-    } else {
-      // Add new
-      const provider: CustomProvider = {
-        id: Date.now().toString(),
-        ...newProvider
-      };
-      saveCustomProviders([...customProviders, provider]);
+    try {
+      if (editingProviderId) {
+        // Update existing
+        const updated = await AIProviderDatabase.update({
+          ...newProvider,
+          id: editingProviderId,
+        });
+        setCustomProviders(updated);
+        setEditingProviderId(null);
+        success("提供商配置已更新");
+      } else {
+        // Add new
+        const provider: CustomProvider = {
+          id: Date.now().toString(),
+          ...newProvider,
+        };
+        const updated = await AIProviderDatabase.add(provider);
+        setCustomProviders(updated);
+        success("已添加新提供商");
+      }
+      setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
+      setIsAddingCustom(false);
+    } catch (err) {
+      console.error(err);
+      error("保存失败");
     }
-
-    setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
-    setIsAddingCustom(false);
   };
 
   const handleEditCustomProvider = (provider: CustomProvider) => {
@@ -138,7 +149,7 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target?.result as string;
         const json = JSON.parse(content);
@@ -166,9 +177,12 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
           return;
         }
 
-        if (confirm(`解析成功，发现 ${validProviders.length} 个配置项。\n点击确定将其合并到当前列表。`)) {
-          const updated = [...customProviders, ...validProviders];
-          saveCustomProviders(updated);
+        if (confirm(`解析成功，发现 ${validProviders.length} 个配置项。\n点击确定将其导入数据库。`)) {
+          for (const p of validProviders) {
+            await AIProviderDatabase.add(p);
+          }
+          const updated = await AIProviderDatabase.getAll();
+          setCustomProviders(updated);
           success("导入完成！");
         }
 
@@ -247,15 +261,22 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
     }
   };
 
-  const confirmPasteImport = () => {
+  const confirmPasteImport = async () => {
     if (pastePreviewProviders.length === 0) return;
-    const updated = [...customProviders, ...pastePreviewProviders];
-    saveCustomProviders(updated);
-    setIsPastePreviewOpen(false);
-    setPastePreviewJson('');
-    setPastePreviewProviders([]);
-    setPastePreviewError(null);
-    success(`成功导入 ${pastePreviewProviders.length} 个提供商配置！`);
+    try {
+      for (const p of pastePreviewProviders) {
+        await AIProviderDatabase.add(p);
+      }
+      const updated = await AIProviderDatabase.getAll();
+      setCustomProviders(updated);
+      setIsPastePreviewOpen(false);
+      setPastePreviewJson('');
+      setPastePreviewProviders([]);
+      setPastePreviewError(null);
+      success(`成功导入 ${pastePreviewProviders.length} 个提供商配置！`);
+    } catch (err) {
+      error("导入失败");
+    }
   };
 
   const cancelPasteImport = () => {
@@ -265,12 +286,18 @@ const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
     setPastePreviewError(null);
   };
 
-  const handleDeleteCustomProvider = (id: string) => {
+  const handleDeleteCustomProvider = async (id: string) => {
     if (!window.confirm("确定删除此自定义提供商配置吗？")) return;
-    saveCustomProviders(customProviders.filter(p => p.id !== id));
-    const newResults = { ...customTestResults };
-    delete newResults[id];
-    setCustomTestResults(newResults);
+    try {
+      const updated = await AIProviderDatabase.delete(id);
+      setCustomProviders(updated);
+      const newResults = { ...customTestResults };
+      delete newResults[id];
+      setCustomTestResults(newResults);
+      success("提供商已删除");
+    } catch (err) {
+      error("删除失败");
+    }
   };
 
   const testCustomConnection = async (provider: CustomProvider) => {

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { CustomProvider, PromptTemplate, CriticMessage, CriticSession } from '../types';
-import { PromptDatabase, CriticDatabase } from '../db';
+import { PromptDatabase, CriticDatabase, AIProviderDatabase } from '../db';
 
 const AICritic: React.FC = () => {
   const [sessions, setSessions] = useState<CriticSession[]>([]);
@@ -43,15 +43,12 @@ const AICritic: React.FC = () => {
   useEffect(() => {
     const loadInitData = async () => {
       // Load Custom Providers
-      const savedProviders = localStorage.getItem('helerix_custom_providers');
-      if (savedProviders) {
-        try {
-          const providers = JSON.parse(savedProviders);
-          setCustomProviders(providers);
-          if (providers.length > 0) setSelectedProviderId(providers[0].id);
-        } catch (e) {
-          console.error("Failed to load providers", e);
-        }
+      try {
+        const providers = await AIProviderDatabase.getAll();
+        setCustomProviders(providers);
+        if (providers.length > 0) setSelectedProviderId(providers[0].id);
+      } catch (e) {
+        console.error("Failed to load providers", e);
       }
 
       // Load Prompts

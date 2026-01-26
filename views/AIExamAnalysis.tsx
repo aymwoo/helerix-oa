@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { ExamAnalysis, PromptTemplate, CustomProvider } from '../types';
-import { ExamAnalysisDatabase, PromptDatabase } from '../db';
+import { ExamAnalysisDatabase, PromptDatabase, AIProviderDatabase } from '../db';
 import { useToast } from '../components/ToastContext';
 
 const AIExamAnalysis: React.FC = () => {
@@ -45,15 +45,12 @@ const AIExamAnalysis: React.FC = () => {
       }
 
       // Load Custom Providers
-      const savedProviders = localStorage.getItem('helerix_custom_providers');
-      if (savedProviders) {
-        try {
-          const providers = JSON.parse(savedProviders);
-          setCustomProviders(providers);
-          if (providers.length > 0) setSelectedProviderId(providers[0].id);
-        } catch (e) {
-          console.error("Failed to load providers", e);
-        }
+      try {
+        const providers = await AIProviderDatabase.getAll();
+        setCustomProviders(providers);
+        if (providers.length > 0) setSelectedProviderId(providers[0].id);
+      } catch (e) {
+        console.error("Failed to load providers", e);
       }
     };
     loadData();

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { CustomProvider } from '../types';
+import { AIProviderDatabase } from '../db';
 import { useToast } from '../components/ToastContext';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'testing';
@@ -29,44 +30,56 @@ const AIProviderConfig: React.FC = () => {
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customTestResults, setCustomTestResults] = useState<Record<string, { status: ConnectionStatus, message: string }>>({});
 
-  // Load custom providers from local storage on mount
+  // Load custom providers from database on mount
   useEffect(() => {
-    const saved = localStorage.getItem('helerix_custom_providers');
-    if (saved) {
+    const loadProviders = async () => {
       try {
-        setCustomProviders(JSON.parse(saved));
+        const data = await AIProviderDatabase.getAll();
+        setCustomProviders(data);
       } catch (e) {
-        console.error("Failed to parse custom providers", e);
+        console.error("Failed to load providers", e);
       }
-    }
+    };
+    loadProviders();
   }, []);
 
   const saveCustomProviders = (providers: CustomProvider[]) => {
     setCustomProviders(providers);
-    localStorage.setItem('helerix_custom_providers', JSON.stringify(providers));
   };
 
-  const handleAddCustomProvider = () => {
+  const handleAddCustomProvider = async () => {
     if (!newProvider.name || !newProvider.baseUrl || !newProvider.apiKey) {
       warning("请填写必要信息 (名称, Base URL, API Key)");
       return;
     }
-    const provider: CustomProvider = {
-      id: Date.now().toString(),
-      ...newProvider
-    };
-    saveCustomProviders([...customProviders, provider]);
-    setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
-    setIsAddingCustom(false);
+    try {
+      const provider: CustomProvider = {
+        id: Date.now().toString(),
+        ...newProvider
+      };
+      const updated = await AIProviderDatabase.add(provider);
+      setCustomProviders(updated);
+      setNewProvider({ name: '', baseUrl: '', apiKey: '', modelId: '' });
+      setIsAddingCustom(false);
+      success("添加成功");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDeleteCustomProvider = (id: string) => {
+  const handleDeleteCustomProvider = async (id: string) => {
     if (!window.confirm("确定删除此自定义提供商配置吗？")) return;
-    saveCustomProviders(customProviders.filter(p => p.id !== id));
-    // Clean up test results
-    const newResults = { ...customTestResults };
-    delete newResults[id];
-    setCustomTestResults(newResults);
+    try {
+      const updated = await AIProviderDatabase.delete(id);
+      setCustomProviders(updated);
+      // Clean up test results
+      const newResults = { ...customTestResults };
+      delete newResults[id];
+      setCustomTestResults(newResults);
+      success("已删除");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const testCustomConnection = async (provider: CustomProvider) => {

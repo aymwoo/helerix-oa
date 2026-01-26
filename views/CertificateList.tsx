@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider } from '../types';
-import { CertificateDatabase, PromptDatabase, FileManager } from '../db';
+import { CertificateDatabase, PromptDatabase, FileManager, AIProviderDatabase } from '../db';
 import { useToast } from '../components/ToastContext';
 
 interface CertificateListProps {
@@ -73,15 +73,12 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         }
 
         // Load custom AI providers
-        const savedProviders = localStorage.getItem('helerix_custom_providers');
-        if (savedProviders) {
-          try {
-            const providers = JSON.parse(savedProviders);
-            setCustomProviders(providers);
-            if (providers.length > 0) setSelectedProviderId(providers[0].id);
-          } catch (e) {
-            console.error("Failed to load providers", e);
-          }
+        try {
+          const providers = await AIProviderDatabase.getAll();
+          setCustomProviders(providers);
+          if (providers.length > 0) setSelectedProviderId(providers[0].id);
+        } catch (e) {
+          console.error("Failed to load providers", e);
         }
       } catch (error) {
         console.error("加载证书失败", error);
