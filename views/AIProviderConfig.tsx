@@ -432,7 +432,7 @@ const AIProviderConfig: React.FC = () => {
             <div>
                <h3 className="text-xl font-black mb-2">安全隐私说明</h3>
                <p className="text-sm text-white/50 leading-relaxed font-medium max-w-xl">
-                  Helerix 教研系统不会以持久化形式在云端存储您的 API 密钥。所有凭证仅在当前浏览器会话中用于加密握手，且仅用于辅助教学研判任务。
+                  Helerix 教研系统会将您的 API 密钥安全加密存储在数据库中，用于系统自动化调用。请确保您的服务器环境安全。
                </p>
             </div>
          </div>
