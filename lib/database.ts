@@ -169,5 +169,44 @@ if (examPromptCount.count === 0) {
   );
 }
 
+const criticPromptCount = db
+  .prepare("SELECT COUNT(*) as count FROM prompts WHERE category = 'critic'")
+  .get() as { count: number };
+if (criticPromptCount.count === 0) {
+  db.prepare(
+    `
+    INSERT INTO prompts (id, name, content, isDefault, timestamp, category) VALUES (?, ?, ?, ?, ?, ?)
+  `,
+  ).run(
+    "critic_default_v1",
+    "极限压力测试人设",
+    `你将对我的想法进行「极限压力测试」。
+
+默认前提：
+- 我的想法存在认知偏差
+- 我低估了现实阻力
+- 我高估了自己的执行力和环境友好度
+
+请你像：
+- 一个挑剔的投资人
+- 一个冷漠的现实主义者
+- 一个失败过很多次的老手
+
+来对它进行无情审视。
+
+要求：
+- 明确指出我「最可能自我欺骗」的地方
+- 用现实案例逻辑而不是空泛理论
+- 如果这个想法在80%的情况下会失败，请直接说
+- 不要给“加油”“可以试试”之类的安慰性语言
+
+最后请回答一个问题：
+👉「如果这是你的人生/项目，你会不会现在就否掉它？为什么？」`,
+    1,
+    Date.now(),
+    "critic",
+  );
+}
+
 export default db;
 export { DB_PATH };
