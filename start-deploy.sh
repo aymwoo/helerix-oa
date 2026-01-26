@@ -80,8 +80,17 @@ if [ ! -d "data" ]; then
     mkdir -p data
 fi
 
+# Check for certificates
+USE_HTTPS=false
+if [ -f "./certs/key.pem" ] && [ -f "./certs/cert.pem" ]; then
+    USE_HTTPS=true
+    echo -e "${GREEN}✓${NC} Certificates found, enabling HTTPS"
+else
+    echo -e "${YELLOW}⚠️  Certificates not found in ./certs/, falling back to HTTP${NC}"
+fi
+
 # Build if needed
-if [ "$FORCE_BUILD" = true ] || [ ! -d ".next" ]; then
+if [ "$FORCE_BUILD" = true ] || [ ! -f ".next/BUILD_ID" ]; then
     echo -e "${YELLOW}🔨 Building application...${NC}"
     npm run build
     
@@ -95,17 +104,33 @@ else
     echo -e "${GREEN}✓${NC} Using existing build (use --build to rebuild)"
 fi
 
-# Export environment variables
-export PORT=$PORT
-export HOSTNAME=$HOST
+# Set protocol and check certificates
+PROTOCOL="https"
+USE_HTTPS=false
+
+if [ -f "./certs/key.pem" ] && [ -f "./certs/cert.pem" ]; then
+    USE_HTTPS=true
+    echo -e "${GREEN}✓${NC} SSL certificates found"
+else
+    echo -e "${YELLOW}⚠️  SSL certificates not found in ./certs/${NC}"
+    echo -e "${YELLOW}   Defaulting to HTTP in server output${NC}"
+    PROTOCOL="http"
+fi
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════════${NC}"
-echo -e "${GREEN}  Starting Helerix OA Server${NC}"
-echo -e "${GREEN}  URL: http://$HOST:$PORT${NC}"
+echo -e "${GREEN}  Starting Helerix OA Production Server${NC}"
+echo -e "${GREEN}  URL: ${PROTOCOL}://$HOST:$PORT${NC}"
+
+if [ "$PROTOCOL" = "https" ]; then
+    echo -e "${YELLOW}  (Note: Next.js 'start' runs on HTTP locally.)${NC}"
+    echo -e "${YELLOW}  (Use Nginx as reverse proxy to terminate SSL at this URL)${NC}"
+fi
+
 echo -e "${GREEN}  Database: ./data/helerix.db${NC}"
 echo -e "${GREEN}════════════════════════════════════════════${NC}"
 echo ""
 
 # Start the production server
-exec npm run start
+# 'next start' only supports HTTP. HTTPS must be handled by a reverse proxy (e.g. Nginx/Caddy).
+exec npx next start -H "$HOST" -p "$PORT"
