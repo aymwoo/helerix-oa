@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { CustomProvider, PromptTemplate, PromptCategory } from '../types';
+import { CustomProvider, PromptTemplate, PromptCategory, User, UserRole } from '../types';
 import { DatabaseManager, PromptDatabase } from '../db';
 import * as Diff from 'diff';
 import { useToast } from '../components/ToastContext';
@@ -9,8 +7,13 @@ import { useToast } from '../components/ToastContext';
 type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'testing';
 type SettingsTab = 'ai-config' | 'prompt-engineering' | 'system-maintenance';
 
-const SystemSettings: React.FC = () => {
+interface SystemSettingsProps {
+  currentUser: User | null;
+}
+
+const SystemSettings: React.FC<SystemSettingsProps> = ({ currentUser }) => {
   const { success, error, warning, info } = useToast();
+  const isAdmin = currentUser?.roles.includes(UserRole.Admin);
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai-config');
 
   // Custom Providers State
@@ -440,13 +443,15 @@ const SystemSettings: React.FC = () => {
           <span className="material-symbols-outlined text-[18px]">psychology</span>
           提示词工程
         </button>
-        <button
-          onClick={() => setActiveTab('system-maintenance')}
-          className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'system-maintenance' ? 'bg-[#8B5CF6] text-white shadow-sm ring-1 ring-black/5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
-        >
-          <span className="material-symbols-outlined text-[18px]">database</span>
-          系统维护与备份
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('system-maintenance')}
+            className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === 'system-maintenance' ? 'bg-[#8B5CF6] text-white shadow-sm ring-1 ring-black/5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+          >
+            <span className="material-symbols-outlined text-[18px]">database</span>
+            系统维护与备份
+          </button>
+        )}
       </div>
 
       {/* Content Area */}
@@ -466,35 +471,37 @@ const SystemSettings: React.FC = () => {
                     <p className="text-xs text-text-muted mt-0.5">连接 Qwen、DeepSeek、Ollama 等兼容接口。</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="file"
-                    ref={importInputRef}
-                    onChange={handleImportProviders}
-                    className="hidden"
-                    accept=".json"
-                  />
-                  <button
-                    onClick={() => importInputRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
-                  >
-                    导入配置
-                  </button>
-                  <button
-                    onClick={handlePasteProviders}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
-                    title="从剪贴板粘贴 JSON 配置"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">content_paste</span>
-                    粘贴配置
-                  </button>
-                  <button
-                    onClick={() => isAddingCustom ? cancelAddOrEdit() : setIsAddingCustom(true)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isAddingCustom ? 'bg-gray-100 text-gray-600' : 'bg-[#8B5CF6] text-white hover:bg-violet-600 shadow-sm'}`}
-                  >
-                    {isAddingCustom ? '取消' : '+ 添加提供商'}
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      ref={importInputRef}
+                      onChange={handleImportProviders}
+                      className="hidden"
+                      accept=".json"
+                    />
+                    <button
+                      onClick={() => importInputRef.current?.click()}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
+                    >
+                      导入配置
+                    </button>
+                    <button
+                      onClick={handlePasteProviders}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border bg-white text-gray-700 border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
+                      title="从剪贴板粘贴 JSON 配置"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">content_paste</span>
+                      粘贴配置
+                    </button>
+                    <button
+                      onClick={() => isAddingCustom ? cancelAddOrEdit() : setIsAddingCustom(true)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isAddingCustom ? 'bg-gray-100 text-gray-600' : 'bg-[#8B5CF6] text-white hover:bg-violet-600 shadow-sm'}`}
+                    >
+                      {isAddingCustom ? '取消' : '+ 添加提供商'}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* JSON Format Help - Collapsible */}
@@ -666,8 +673,12 @@ const SystemSettings: React.FC = () => {
                               </div>
                             )}
                             <button onClick={() => testCustomConnection(provider)} disabled={status === 'testing'} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 text-text-muted hover:text-[#8B5CF6] transition-colors disabled:opacity-50" title="测试连接"><span className={`material-symbols-outlined text-[18px] ${status === 'testing' ? 'animate-spin' : ''}`}>network_check</span></button>
-                            <button onClick={() => handleEditCustomProvider(provider)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 text-text-muted hover:text-[#8B5CF6] transition-colors" title="编辑配置"><span className="material-symbols-outlined text-[18px]">edit</span></button>
-                            <button onClick={() => handleDeleteCustomProvider(provider.id)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors" title="删除配置"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                            {isAdmin && (
+                              <>
+                                <button onClick={() => handleEditCustomProvider(provider)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-gray-50 text-text-muted hover:text-[#8B5CF6] transition-colors" title="编辑配置"><span className="material-symbols-outlined text-[18px]">edit</span></button>
+                                <button onClick={() => handleDeleteCustomProvider(provider.id)} className="p-2 bg-white border border-[#E5E7EB] rounded-xl hover:bg-red-50 text-text-muted hover:text-red-600 transition-colors" title="删除配置"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                              </>
+                            )}
                           </div>
                         </div>
                       );

@@ -68,14 +68,7 @@ const App: React.FC = () => {
   };
 
   const handleNavigate = (view: ViewState) => {
-    // Permission check for system settings
-    if (view === 'system-settings') {
-      const isAdmin = currentUser?.roles.includes(UserRole.Admin);
-      if (!isAdmin) {
-        error("权限不足：系统设置仅对管理员开放");
-        return;
-      }
-    }
+    // Navigation logic
     setCurrentView(view);
     if (view !== 'user-profile') setSelectedUserId(null);
     if (view !== 'certificate-detail') setSelectedCertId(null);
@@ -98,7 +91,7 @@ const App: React.FC = () => {
       case 'user-profile': return selectedUserId ? <UserProfile userId={selectedUserId} onBack={() => handleNavigate('users')} /> : <UserList onUserSelect={handleUserSelect} currentUser={currentUser} />;
       case 'certificates': return <CertificateList onCertSelect={handleCertSelect} />;
       case 'certificate-detail': return selectedCertId ? <CertificateDetail certId={selectedCertId} onBack={() => handleNavigate('certificates')} /> : <CertificateList onCertSelect={handleCertSelect} />;
-      case 'system-settings': return <SystemSettings />;
+      case 'system-settings': return <SystemSettings currentUser={currentUser} />;
       case 'ai-exam-analysis': return <AIExamAnalysis />;
       case 'ai-critic': return <AICritic />;
       case 'my-profile': return <MyProfile currentUser={currentUser} onUserUpdate={setCurrentUser} />;

@@ -75,14 +75,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser,
           {currentView === 'ai-critic' && <ActiveIndicator />}
         </div>
 
-        {/* 仅管理员可见 系统设置 */}
-        {isAdmin && (
-          <div onClick={() => onNavigate('system-settings')} className={getLinkClass('system-settings')}>
-            <span className="material-symbols-outlined text-xl">settings</span>
-            系统设置
-            {currentView === 'system-settings' && <ActiveIndicator />}
-          </div>
-        )}
+        <div onClick={() => onNavigate('system-settings')} className={getLinkClass('system-settings')}>
+          <span className="material-symbols-outlined text-xl">settings</span>
+          系统设置
+          {currentView === 'system-settings' && <ActiveIndicator />}
+        </div>
       </nav>
 
       {/* User Profile Footer */}
