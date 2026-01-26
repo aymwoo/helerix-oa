@@ -13,14 +13,19 @@ type AuthMode = 'login' | 'register';
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isQuickLogin, setIsQuickLogin] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [selectedQuickUser, setSelectedQuickUser] = useState<User | null>(null);
+  const [quickPassword, setQuickPassword] = useState('');
 
   // Registration form state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regDepartment, setRegDepartment] = useState('');
   const [regRole, setRegRole] = useState<UserRole>(UserRole.Math);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -46,7 +51,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   }, []);
 
   const handleQuickLogin = (user: User) => {
-    onLogin(user);
+    setError(null);
+    setQuickPassword('');
+    setSelectedQuickUser(user);
+  };
+
+  const handleQuickPasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedQuickUser) return;
+
+    if (selectedQuickUser.password === quickPassword) {
+      onLogin(selectedQuickUser);
+    } else {
+      setError("密码错误");
+    }
   };
 
   const handleEmailLogin = (e: React.FormEvent) => {
@@ -55,7 +73,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
     if (user) {
-      onLogin(user);
+      if (user.password === password) {
+        onLogin(user);
+      } else {
+        setError("密码不正确");
+      }
     } else {
       setError("未找到该邮箱对应的用户账户");
     }
@@ -74,6 +96,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setError("请输入有效的邮箱地址");
       return;
     }
+    if (regPassword.length < 6) {
+      setError("密码长度至少为 6 位");
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setError("两次输入的密码不一致");
+      return;
+    }
 
     // Check if email already exists
     const existingUser = users.find(u => u.email.toLowerCase() === regEmail.toLowerCase().trim());
@@ -89,6 +119,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         id: `user_${Date.now()}`,
         name: regName.trim(),
         email: regEmail.trim().toLowerCase(),
+        password: regPassword,
         roles: [regRole], // Admin role will be added automatically if this is the first user
         department: regDepartment.trim() || "未分配",
         status: UserStatus.Active,
@@ -227,6 +258,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-xs text-white/40 uppercase tracking-wider font-bold mb-2">密码</label>
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">lock</span>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                        placeholder="••••••••"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                    </div>
+                  </div>
+
                   {error && (
                     <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm animate-in fade-in slide-in-from-top-2">
                       <span className="material-symbols-outlined text-lg">error</span>
@@ -236,7 +281,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-gradient-to-r from-primary to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:from-primary/90 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="w-full py-3.5 bg-gradient-to-r from-[#8B5CF6] to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/40 hover:from-[#8B5CF6]/90 hover:to-indigo-500 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-xl">login</span>
                     登录系统
@@ -324,6 +369,35 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider font-bold mb-2">设置密码 *</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">lock</span>
+                    <input
+                      type="password"
+                      value={regPassword}
+                      onChange={(e) => { setRegPassword(e.target.value); setError(null); }}
+                      placeholder="至少6位"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-white/40 uppercase tracking-wider font-bold mb-2">确认密码 *</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">verified_user</span>
+                    <input
+                      type="password"
+                      value={regConfirmPassword}
+                      onChange={(e) => { setRegConfirmPassword(e.target.value); setError(null); }}
+                      placeholder="再次输入"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm animate-in fade-in slide-in-from-top-2">
                   <span className="material-symbols-outlined text-lg">error</span>
@@ -379,6 +453,60 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="absolute bottom-4 right-4 w-16 h-16 border border-white/5 rounded-full" />
         </div>
       </div>
+
+      {/* Quick Login Password Modal */}
+      {selectedQuickUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 w-full max-w-sm rounded-[2.5rem] border border-white/10 shadow-2xl p-8 animate-in zoom-in duration-200">
+            <div className="text-center mb-8">
+              <img
+                src={selectedQuickUser.avatarUrl}
+                alt={selectedQuickUser.name}
+                className="w-20 h-20 rounded-full border-4 border-primary/20 mx-auto mb-4"
+              />
+              <h3 className="text-xl font-black text-white">{selectedQuickUser.name}</h3>
+              <p className="text-white/40 text-xs mt-1">请输入登录密码</p>
+            </div>
+
+            <form onSubmit={handleQuickPasswordSubmit} className="space-y-4">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-xl">lock</span>
+                <input
+                  type="password"
+                  autoFocus
+                  value={quickPassword}
+                  onChange={(e) => { setQuickPassword(e.target.value); setError(null); }}
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-white/30 outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-xs">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedQuickUser(null); setError(null); }}
+                  className="flex-1 py-3.5 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3.5 bg-[#8B5CF6] text-white font-bold rounded-xl shadow-lg shadow-[#8B5CF6]/20 hover:bg-violet-700 transition-all"
+                >
+                  确认登录
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

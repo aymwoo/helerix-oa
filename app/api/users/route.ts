@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
 
     db.prepare(
       `
-      INSERT INTO users (id, name, email, roles, department, status, avatarUrl, bio, phone, joinDate, expertise)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, name, email, roles, department, status, avatarUrl, bio, phone, password, joinDate, expertise)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     ).run(
       user.id,
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       user.avatarUrl,
       user.bio || "",
       user.phone || "",
+      user.password || "123456", // Default password if empty
       user.joinDate || "",
       JSON.stringify(user.expertise || []),
     );

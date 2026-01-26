@@ -175,14 +175,17 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser, onUserUpdate }) => {
     }
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!profile) return;
     setPasswordFeedback(null);
 
-    if (!passwordForm.current) {
-      setPasswordFeedback({ type: 'error', message: '请输入当前密码' });
+    // Security check: verify current password
+    if (passwordForm.current !== (profile.password || '123456')) {
+      setPasswordFeedback({ type: 'error', message: '当前密码错误' });
       return;
     }
+    
     if (passwordForm.new.length < 6) {
       setPasswordFeedback({ type: 'error', message: '新密码长度至少为 6 位' });
       return;
@@ -193,16 +196,24 @@ const MyProfile: React.FC<MyProfileProps> = ({ currentUser, onUserUpdate }) => {
     }
 
     setIsPasswordChanging(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsPasswordChanging(false);
+    try {
+      const updatedProfile = { ...profile, password: passwordForm.new };
+      await UserDatabase.update(updatedProfile);
+      onUserUpdate(updatedProfile);
+      setProfile(updatedProfile);
+      
       setPasswordFeedback({ type: 'success', message: '密码修改成功！' });
       setTimeout(() => {
         setIsPasswordModalOpen(false);
         setPasswordForm({ current: '', new: '', confirm: '' });
         setPasswordFeedback(null);
       }, 1500);
-    }, 1200);
+    } catch (err) {
+      console.error("Password update failed", err);
+      setPasswordFeedback({ type: 'error', message: '系统错误，密码修改失败' });
+    } finally {
+      setIsPasswordChanging(false);
+    }
   };
 
   const formatTime = (ts: number) => {

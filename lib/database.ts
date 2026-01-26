@@ -25,6 +25,7 @@ db.exec(`
     avatarUrl TEXT,
     bio TEXT,
     phone TEXT,
+    password TEXT,
     joinDate TEXT,
     expertise TEXT
   );
@@ -97,6 +98,12 @@ db.exec(`
     colorClass TEXT
   );
 `);
+
+// Simple migration logic
+const usersTableInfo = db.prepare("PRAGMA table_info(users)").all() as any[];
+if (!usersTableInfo.some((col) => col.name === "password")) {
+  db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT '123456'");
+}
 
 // Initialize default prompts if not exist
 const certPromptCount = db

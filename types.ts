@@ -1,4 +1,3 @@
-
 export enum UserRole {
   Admin = "系统管理员",
   Chinese = "语文教研员",
@@ -12,27 +11,28 @@ export enum UserRole {
   Politics = "道德与法治教研员",
   PE = "体育教研员",
   Art = "艺术教研员",
-  IT = "信息技术教研员"
+  IT = "信息技术教研员",
 }
 
 export enum UserStatus {
   Active = "在线",
   Offline = "离线",
-  Inactive = "未激活"
+  Inactive = "未激活",
 }
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  roles: UserRole[]; 
+  roles: UserRole[];
   department: string;
   status: UserStatus;
   avatarUrl: string;
-  bio?: string;      
-  phone?: string;    
-  joinDate?: string; 
-  expertise?: string[]; 
+  bio?: string;
+  phone?: string;
+  password?: string;
+  joinDate?: string;
+  expertise?: string[];
 }
 
 export interface Project {
@@ -40,7 +40,7 @@ export interface Project {
   name: string;
   deadline: string;
   progress: number;
-  team: string[]; 
+  team: string[];
   extraTeamCount?: number;
   color: "primary" | "secondary";
 }
@@ -50,7 +50,7 @@ export enum HonorLevel {
   Provincial = "省级",
   Municipal = "市级",
   District = "区县级",
-  School = "校级"
+  School = "校级",
 }
 
 export enum CertificateCategory {
@@ -58,7 +58,7 @@ export enum CertificateCategory {
   Project = "课题结项",
   Training = "培训结业",
   Qualification = "职称资格",
-  Other = "其他成果"
+  Other = "其他成果",
 }
 
 export interface Certificate {
@@ -69,8 +69,8 @@ export interface Certificate {
   level: HonorLevel;
   category: CertificateCategory;
   credentialUrl?: string;
-  hours?: number; 
-  timestamp: number; 
+  hours?: number;
+  timestamp: number;
 }
 
 export interface StoredFile {
@@ -113,9 +113,9 @@ export interface ExamAnalysis {
 
 export interface CriticMessage {
   id: string;
-  role: 'user' | 'model';
+  role: "user" | "model";
   text: string;
-  attachments?: { type: 'image' | 'pdf'; data: string; name: string }[];
+  attachments?: { type: "image" | "pdf"; data: string; name: string }[];
   isError?: boolean;
 }
 
@@ -130,7 +130,7 @@ export interface CriticSession {
 export interface EventTypeTag {
   id: string;
   name: string;
-  colorClass: string; 
+  colorClass: string;
 }
 
 export interface ScheduleEvent {
@@ -139,12 +139,21 @@ export interface ScheduleEvent {
   date: string; // YYYY-MM-DD
   startTime: string; // HH:MM
   endTime: string; // HH:MM
-  type: string; 
+  type: string;
   description?: string;
   participants?: string[]; // Names of participants
 }
 
-export type ViewState = "schedule" | "users" | "user-profile" | "system-settings" | "certificates" | "certificate-detail" | "ai-exam-analysis" | "ai-critic" | "my-profile";
+export type ViewState =
+  | "schedule"
+  | "users"
+  | "user-profile"
+  | "system-settings"
+  | "certificates"
+  | "certificate-detail"
+  | "ai-exam-analysis"
+  | "ai-critic"
+  | "my-profile";
 
 export interface CustomProvider {
   id: string;

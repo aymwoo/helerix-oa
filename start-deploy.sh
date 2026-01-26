@@ -54,7 +54,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Check Node.js
-if ! command -v node &> /dev/null; then
+if ! node -v &> /dev/null; then
     echo -e "${RED}❌ Node.js is not installed. Please install Node.js first.${NC}"
     exit 1
 fi
@@ -63,7 +63,7 @@ NODE_VERSION=$(node -v)
 echo -e "${GREEN}✓${NC} Node.js version: $NODE_VERSION"
 
 # Check npm
-if ! command -v npm &> /dev/null; then
+if ! npm -v &> /dev/null; then
     echo -e "${RED}❌ npm is not installed.${NC}"
     exit 1
 fi

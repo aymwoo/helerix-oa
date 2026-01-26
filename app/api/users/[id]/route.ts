@@ -32,7 +32,7 @@ export async function PUT(
     const user = await request.json();
     db.prepare(
       `
-      UPDATE users SET name=?, email=?, roles=?, department=?, status=?, avatarUrl=?, bio=?, phone=?, joinDate=?, expertise=?
+      UPDATE users SET name=?, email=?, roles=?, department=?, status=?, avatarUrl=?, bio=?, phone=?, password=?, joinDate=?, expertise=?
       WHERE id=?
     `,
     ).run(
@@ -44,6 +44,7 @@ export async function PUT(
       user.avatarUrl,
       user.bio || "",
       user.phone || "",
+      user.password,
       user.joinDate || "",
       JSON.stringify(user.expertise || []),
       id,
