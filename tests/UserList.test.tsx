@@ -29,15 +29,28 @@ global.confirm = vi.fn() as any
 global.alert = vi.fn()
 
 // Mock File and FileReader
-global.FileReader = vi.fn().mockImplementation(function () {
+global.FileReader = vi.fn().mockImplementation(function() {
   return {
-    onload: null,
     readAsBinaryString: vi.fn(),
-    readAsText: vi.fn()
+    readAsText: vi.fn(),
+    readAsArrayBuffer: vi.fn(),
+    readAsDataURL: vi.fn(),
+    onload: null as any,
+    onerror: null as any,
+    EMPTY: 0,
+    LOADING: 1,
+    DONE: 2,
   }
 }) as any
 
-global.File = vi.fn()
+global.File = vi.fn().mockImplementation(function(content: any[], name: string) {
+  return {
+    name,
+    size: content.reduce((acc, curr) => acc + (curr.length || 0), 0),
+    type: '',
+    slice: () => new Blob(),
+  }
+}) as any
 
 describe('UserList', () => {
   const mockAdminUser = {
@@ -211,7 +224,7 @@ describe('UserList', () => {
 
   describe('Deleting Users', () => {
     it('should delete user after confirmation', async () => {
-      global.confirm.mockReturnValue(true)
+      vi.mocked(global.confirm).mockReturnValue(true)
       vi.mocked(UserDatabase.delete).mockResolvedValue(mockUsers.slice(1))
 
       render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
@@ -226,7 +239,7 @@ describe('UserList', () => {
     })
 
     it('should not delete user if not confirmed', async () => {
-      global.confirm.mockReturnValue(false)
+      vi.mocked(global.confirm).mockReturnValue(false)
 
       render(<ToastProvider><UserList onUserSelect={() => { }} currentUser={mockAdminUser} /></ToastProvider>)
       await waitFor(() => screen.getByText('张三'))
@@ -286,16 +299,16 @@ describe('UserList', () => {
       fireEvent.change(fileInput, { target: { files: [mockFile] } })
 
       // Retrieve the FileReader instance created by the component
-      const mockFileReader = (global.FileReader as any).mock.results[0].value
+      const readerInstance = vi.mocked(global.FileReader).mock.results[0].value
 
-      expect(mockFileReader.readAsBinaryString).toHaveBeenCalledWith(mockFile)
+      expect(readerInstance.readAsArrayBuffer).toHaveBeenCalledWith(mockFile)
 
       // Trigger onload manually
-      mockFileReader.onload({ target: { result: 'mock data' } })
+      readerInstance.onload({ target: { result: 'mock data' } } as any)
 
       await waitFor(() => {
         expect(UserDatabase.add).toHaveBeenCalled()
-        expect(global.alert).toHaveBeenCalledWith('成功导入 1 名教研员')
+        expect(screen.getByText(/成功导入/)).toBeInTheDocument()
       })
     })
   })

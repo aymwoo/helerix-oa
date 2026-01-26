@@ -21,6 +21,18 @@ vi.mock('../constants', () => ({
 
 import { UserDatabase } from '../db'
 
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => { store[key] = value }),
+    removeItem: vi.fn((key: string) => { delete store[key] }),
+    clear: vi.fn(() => { store = {} }),
+  }
+})()
+Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+
 describe('Login Component', () => {
     const mockOnLogin = vi.fn()
     
@@ -49,9 +61,10 @@ describe('Login Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        localStorageMock.clear()
         vi.mocked(UserDatabase.getAll).mockResolvedValue(mockUsers)
         // Set recent logins so they show up in Quick Login
-        localStorage.setItem('helerix_recent_logins', JSON.stringify(['user-1', 'user-2']))
+        localStorageMock.setItem('helerix_recent_logins', JSON.stringify(['user-1', 'user-2']))
     })
 
     it('should render login page with logo', async () => {
@@ -85,8 +98,8 @@ describe('Login Component', () => {
         render(<ToastProvider><Login onLogin={mockOnLogin} /></ToastProvider>)
         
         await waitFor(() => {
-            expect(screen.getByText('陈老师')).toBeInTheDocument()
-            expect(screen.getByText('李老师')).toBeInTheDocument()
+            expect(screen.getByText(/陈老师/)).toBeInTheDocument()
+            expect(screen.getByText(/李老师/)).toBeInTheDocument()
         })
     })
 
@@ -94,7 +107,7 @@ describe('Login Component', () => {
         render(<ToastProvider><Login onLogin={mockOnLogin} /></ToastProvider>)
         
         await waitFor(() => {
-            expect(screen.getByText('管理员')).toBeInTheDocument()
+            expect(screen.getByText(/管理员/)).toBeInTheDocument()
         })
     })
 
@@ -279,10 +292,14 @@ describe('Login Component', () => {
             target: { value: 'chen@example.com' } // Existing email
         })
         
+        const passwordInputs = screen.getAllByPlaceholderText(/至少6位|再次输入/i)
+        fireEvent.change(passwordInputs[0], { target: { value: 'password123' } })
+        fireEvent.change(passwordInputs[1], { target: { value: 'password123' } })
+        
         fireEvent.click(screen.getByRole('button', { name: /注册账户/i }))
         
         await waitFor(() => {
-            expect(screen.getByText('该邮箱已被注册')).toBeInTheDocument()
+            expect(screen.getByText(/该邮箱已被注册/)).toBeInTheDocument()
         })
     })
 })

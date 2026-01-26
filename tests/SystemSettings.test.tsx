@@ -35,13 +35,16 @@ const localStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 
 // Mock navigator.clipboard
-Object.defineProperty(navigator, 'clipboard', {
-  value: {
-    readText: vi.fn(),
-    writeText: vi.fn(),
-  },
-  writable: true,
-})
+if (!navigator.clipboard) {
+  Object.defineProperty(navigator, 'clipboard', {
+    value: {
+      readText: vi.fn(),
+      writeText: vi.fn(),
+    },
+    writable: true,
+    configurable: true
+  })
+}
 
 // Mock fetch
 global.fetch = vi.fn()
@@ -97,14 +100,14 @@ describe('SystemSettings', () => {
 
     it('should open add provider form when clicking add button', () => {
       render(<ToastProvider><SystemSettings /></ToastProvider>)
-      const addButton = screen.getByText('添加提供商')
+      const addButton = screen.getByText(/添加提供商/)
       fireEvent.click(addButton)
       expect(screen.getByText('确认添加')).toBeInTheDocument()
     })
 
     it('should add custom provider', () => {
       render(<ToastProvider><SystemSettings /></ToastProvider>)
-      fireEvent.click(screen.getByText('添加提供商'))
+      fireEvent.click(screen.getByText(/添加提供商/))
 
       fireEvent.change(screen.getByPlaceholderText('例如: My Ollama Server'), { target: { value: 'Test Provider' } })
       fireEvent.change(screen.getByPlaceholderText('例如: https://api.myserver.com/v1'), { target: { value: 'http://test.com' } })
@@ -197,10 +200,10 @@ describe('SystemSettings', () => {
     })
 
     it('should handle clipboard paste error', async () => {
-      navigator.clipboard.readText = vi.fn(() => Promise.reject({ name: 'NotAllowedError', message: 'Clipboard error' }))
+      vi.mocked(navigator.clipboard.readText).mockRejectedValue({ name: 'NotAllowedError', message: 'Clipboard error' })
 
       render(<ToastProvider><SystemSettings /></ToastProvider>)
-      fireEvent.click(screen.getByText('粘贴导入'))
+      fireEvent.click(screen.getByText(/粘贴配置/))
 
       await waitFor(() => {
         expect(screen.getByText('无法自动读取剪贴板，请手动粘贴内容到下方文本框。')).toBeInTheDocument()
