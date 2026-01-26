@@ -518,7 +518,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 <span className="material-symbols-outlined text-primary">auto_fix</span>
                 荣誉档案录入 Prompt 指令集
               </h3>
-              <p className="text-xs text-text-muted font-medium">定制 AI 对荣誉档案的 OCR 提取规则，修改将仅影响“证书管理”模块。</p>
+              <p className="text-xs text-text-muted font-medium">定制 AI 对荣誉档案的 OCR 提取规则，修改将仅影响“证书登记”模块。</p>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">选择预设:</span>
