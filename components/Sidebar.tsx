@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, currentUser 
     <aside className="w-64 flex-col bg-surface-light border-r border-border-light hidden md:flex transition-colors duration-200">
       <div className="h-20 flex items-center px-6 border-b border-border-light">
         <div className="flex items-center justify-center w-full">
-          <img src={APP_LOGO} alt="Helerix Logo" className="h-10 w-auto object-contain" />
+          <img src={APP_LOGO} alt="Helerix Logo" className="h-16 w-auto object-contain" />
         </div>
       </div>
 

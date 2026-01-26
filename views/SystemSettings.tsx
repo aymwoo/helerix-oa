@@ -320,7 +320,7 @@ const SystemSettings: React.FC = () => {
     try {
       const data = await DatabaseManager.exportDatabase();
       if (data) {
-        const blob = new Blob([data], { type: 'application/x-sqlite3' });
+        const blob = new Blob([data as any], { type: 'application/x-sqlite3' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -872,7 +872,7 @@ const SystemSettings: React.FC = () => {
       {/* Paste Preview Modal */}
       {isPastePreviewOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden animate-in zoom-in duration-200">
+          <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl flex flex-col h-[80vh] overflow-hidden animate-in zoom-in duration-200">
             <div className="px-6 py-5 border-b flex justify-between items-center bg-gradient-to-r from-slate-50 to-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
@@ -909,7 +909,7 @@ const SystemSettings: React.FC = () => {
                   )}
                 </div>
                 <textarea
-                  className={`flex-1 w-full bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono resize-none outline-none border-2 transition-colors leading-relaxed ${pastePreviewError ? 'border-red-500/50' : 'border-transparent focus:border-primary/50'}`}
+                  className={`flex-1 w-full bg-slate-900 text-slate-100 p-4 rounded-xl text-xs font-mono resize outline-none border-2 transition-colors leading-relaxed ${pastePreviewError ? 'border-red-500/50' : 'border-transparent focus:border-primary/50'}`}
                   value={pastePreviewJson}
                   onChange={(e) => parseAndPreview(e.target.value)}
                   placeholder="在此处粘贴或输入 JSON 配置..."
