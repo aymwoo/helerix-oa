@@ -16,6 +16,7 @@ import Login from './views/Login';
 import { ViewState, User, UserRole } from './types';
 import { UserDatabase } from './db';
 import { useToast } from './components/ToastContext';
+import MobileNav from './components/MobileNav';
 
 const AUTH_STORAGE_KEY = 'helerix_auth_user_id';
 
@@ -116,6 +117,8 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#F5F7FA]">
       <Sidebar 
@@ -125,9 +128,16 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <main className="flex-1 overflow-y-auto p-8 no-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 no-scrollbar scroll-smooth">
           {renderView()}
         </main>
+        
+        <MobileNav 
+          currentView={currentView}
+          onNavigate={handleNavigate}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+        />
       </div>
     </div>
   );
