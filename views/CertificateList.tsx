@@ -288,45 +288,20 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
 
 
-  const handleExport = async () => {
-    let filtered = certificates;
-
-    // 1. Filter by User
-    if (statsConfig.targetUserId === 'me') {
-      if (currentUser) {
-        // Include own certificates AND orphaned certificates (legacy data)
-        filtered = filtered.filter(c => c.userId === currentUser.id || !c.userId);
-      }
-    } else if (statsConfig.targetUserId !== 'all') {
-      filtered = filtered.filter(c => c.userId === statsConfig.targetUserId);
-    } 
-    // If 'all', do not filter by userId (Admin only)
-
-    // 2. Filter by Date Range (Issue Date)
-    if (statsConfig.startDate) {
-      filtered = filtered.filter(c => c.issueDate >= statsConfig.startDate);
-    }
-    if (statsConfig.endDate) {
-      filtered = filtered.filter(c => c.issueDate <= statsConfig.endDate);
-    }
-
-    // 3. Filter by Category
-    if (statsConfig.category !== 'all') {
-      filtered = filtered.filter(c => c.category === statsConfig.category);
-    }
-
-    if (filtered.length === 0) {
+  const performExport = async (certsToExport: Certificate[], filenamePrefix: string = "证书统计导出") => {
+    if (certsToExport.length === 0) {
       warning("没有符合条件的记录可导出");
       return;
     }
 
-    setIsLoading(true); // Show loading state
+    setIsLoading(true);
     const zip = new JSZip();
-    const folderName = `证书统计导出_${new Date().toISOString().split('T')[0]}`;
-    const imgFolder = zip.folder(folderName + "/images"); // Create a subfolder for images
+    const dateStr = new Date().toISOString().split('T')[0];
+    const folderName = `${filenamePrefix}_${dateStr}`;
+    const imgFolder = zip.folder(folderName + "/images");
 
     // Generate Excel Data
-    const data = filtered.map(c => {
+    const data = certsToExport.map(c => {
       const owner = allUsers.find(u => u.id === c.userId);
       return {
         "证书名称": c.name,
@@ -337,19 +312,18 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         "学时": c.hours || 0,
         "添加日期": formatDate(c.timestamp),
         "所属用户": owner ? owner.name : (c.userId === currentUser?.id ? currentUser?.name : "未知用户"),
-        "图片文件名": "" // Placeholder, to be filled later or just for structure
+        "图片文件名": ""
       };
     });
 
     const usedFilenames = new Set<string>();
 
-    // Process Images and Add to Zip
-    await Promise.all(filtered.map(async (c, index) => {
+    await Promise.all(certsToExport.map(async (c, index) => {
       if (!c.credentialUrl) return;
 
       try {
         let blob: Blob | null = null;
-        let extension = "jpg"; // Default extension
+        let extension = "jpg";
 
         if (c.credentialUrl.startsWith("file://")) {
             const fileData = await FileManager.getFile(c.credentialUrl);
@@ -361,14 +335,11 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 }
                 const byteArray = new Uint8Array(byteNumbers);
                 blob = new Blob([byteArray], { type: fileData.mimeType });
-                
-                // Try to guess extension from mimeType
                 if (fileData.mimeType === 'application/pdf') extension = 'pdf';
                 else if (fileData.mimeType === 'image/png') extension = 'png';
                 else if (fileData.mimeType === 'image/jpeg') extension = 'jpg';
             }
         } else {
-             // For uploads served by nginx or external URLs
              const res = await fetch(c.credentialUrl);
              if (res.ok) {
                  blob = await res.blob();
@@ -380,23 +351,18 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         }
 
         if (blob && imgFolder) {
-            // Format filename: YYYYMMDD_Name.ext
-            // Clean filename to remove invalid characters
             const safeName = c.name.replace(/[\\/:*?"<>|]/g, "_");
-            const dateStr = c.issueDate.replace(/-/g, "");
-            let filename = `${dateStr}_${safeName}.${extension}`;
+            const dateStrClean = c.issueDate.replace(/-/g, "");
+            let filename = `${dateStrClean}_${safeName}.${extension}`;
             
-            // Handle duplicate filenames
             let counter = 1;
             while (usedFilenames.has(filename)) {
-                filename = `${dateStr}_${safeName}_${counter}.${extension}`;
+                filename = `${dateStrClean}_${safeName}_${counter}.${extension}`;
                 counter++;
             }
             usedFilenames.add(filename);
 
             imgFolder.file(filename, blob);
-            
-            // Update Excel data with the actual filename used
             data[index]["图片文件名"] = filename;
         }
       } catch (err) {
@@ -404,7 +370,6 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       }
     }));
 
-    // Create Excel File
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "证书统计");
@@ -423,15 +388,13 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       { wch: 30 }  // Image Filename
     ];
 
-    // Generate Excel Buffer
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     zip.file(`${folderName}/证书统计表.xlsx`, excelBuffer);
 
-    // Generate and Download Zip
     try {
         const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, `${folderName}.zip`);
-        success(`成功导出 ${filtered.length} 条记录及相应附件`);
+        success(`成功导出 ${certsToExport.length} 条记录及相应附件`);
     } catch (err) {
         console.error("Failed to generate zip", err);
         error("导出压缩包失败");
@@ -439,6 +402,40 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         setIsLoading(false);
         setIsStatsModalOpen(false);
     }
+  };
+
+  const handleExport = async () => {
+    let filtered = certificates;
+
+    // 1. Filter by User
+    if (statsConfig.targetUserId === 'me') {
+      if (currentUser) {
+        filtered = filtered.filter(c => c.userId === currentUser.id || !c.userId);
+      }
+    } else if (statsConfig.targetUserId !== 'all') {
+      filtered = filtered.filter(c => c.userId === statsConfig.targetUserId);
+    } 
+
+    // 2. Filter by Date Range (Issue Date)
+    if (statsConfig.startDate) {
+      filtered = filtered.filter(c => c.issueDate >= statsConfig.startDate);
+    }
+    if (statsConfig.endDate) {
+      filtered = filtered.filter(c => c.issueDate <= statsConfig.endDate);
+    }
+
+    // 3. Filter by Category
+    if (statsConfig.category !== 'all') {
+      filtered = filtered.filter(c => c.category === statsConfig.category);
+    }
+
+    await performExport(filtered);
+  };
+
+  const handleBatchExport = async () => {
+    const selectedCerts = certificates.filter(c => selectedIds.has(c.id));
+    await performExport(selectedCerts, "批量导出证书");
+    setSelectedIds(new Set()); // Clear selection after export
   };
 
   // ========== AI Import Functions ==========
@@ -906,7 +903,44 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         )}
       </div>
 
-      {/* Bulk actions float bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] animate-in fade-in slide-in-from-bottom-8 duration-300">
+          <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-6 border border-white/10">
+            <div className="flex items-center gap-3 pr-6 border-r border-white/20">
+              <div className="w-8 h-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-sm font-bold shadow-inner">
+                {selectedIds.size}
+              </div>
+              <span className="text-sm font-medium tracking-wide">项已选中</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBatchExport}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-all font-bold text-sm shadow-lg shadow-green-600/20 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[20px]">archive</span>
+                批量导出
+              </button>
+
+              <button
+                onClick={() => setDeleteConfirmation({ isOpen: true, certId: null, isBatch: true })}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all font-bold text-sm shadow-lg shadow-red-500/20 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
+                批量删除
+              </button>
+
+              <button
+                onClick={clearSelection}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all font-bold text-sm active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+                取消选择
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Statistics Modal */}
@@ -992,36 +1026,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         </div>
       )}
 
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] animate-in fade-in slide-in-from-bottom-8 duration-300">
-          <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-6 border border-white/10">
-            <div className="flex items-center gap-3 pr-6 border-r border-white/20">
-              <div className="w-8 h-8 rounded-full bg-[#8B5CF6] flex items-center justify-center text-sm font-bold shadow-inner">
-                {selectedIds.size}
-              </div>
-              <span className="text-sm font-medium tracking-wide">项已选中</span>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setDeleteConfirmation({ isOpen: true, certId: null, isBatch: true })}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-all font-bold text-sm shadow-lg shadow-red-500/20 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[20px]">delete_sweep</span>
-                批量删除
-              </button>
-
-              <button
-                onClick={clearSelection}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all font-bold text-sm active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[20px]">close</span>
-                取消选择
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
