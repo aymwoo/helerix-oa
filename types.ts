@@ -73,6 +73,7 @@ export interface Certificate {
   credentialUrl?: string;
   hours?: number;
   timestamp: number;
+  userId?: string;
 }
 
 export interface StoredFile {

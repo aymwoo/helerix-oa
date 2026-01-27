@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 
-import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider } from '../types';
-import { CertificateDatabase, PromptDatabase, FileManager, AIProviderDatabase } from '../db';
+import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider, User, UserRole } from '../types';
+import { CertificateDatabase, PromptDatabase, FileManager, AIProviderDatabase, UserDatabase } from '../db';
+import * as XLSX from 'xlsx';
 import { useToast } from '../components/ToastContext';
 
 interface CertificateListProps {
@@ -44,7 +45,16 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     hours: 0
   });
 
-  // AI Import State
+  // Statistics & Export State
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [statsConfig, setStatsConfig] = useState({
+    startDate: '',
+    endDate: '',
+    category: 'all',
+    targetUserId: 'me' // 'me', 'all', or specific userId
+  });
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [aiAttachments, setAiAttachments] = useState<{ type: 'image' | 'pdf'; data: string; name: string }[]>([]);
   const [customProviders, setCustomProviders] = useState<CustomProvider[]>([]);
@@ -79,6 +89,18 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
           if (providers.length > 0) setSelectedProviderId(providers[0].id);
         } catch (e) {
           console.error("Failed to load providers", e);
+        }
+
+
+        // Load User Info
+        const userId = localStorage.getItem("helerix_auth_user_id");
+        if (userId) {
+          const user = await UserDatabase.getById(userId);
+          setCurrentUser(user);
+          if (user && user.roles.includes(UserRole.Admin)) {
+            const users = await UserDatabase.getAll();
+            setAllUsers(users);
+          }
         }
       } catch (error) {
         console.error("加载证书失败", error);
@@ -260,6 +282,77 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+
+
+  const handleExport = () => {
+    let filtered = certificates;
+
+    // 1. Filter by User
+    if (statsConfig.targetUserId === 'me') {
+      if (currentUser) {
+        // Include own certificates AND orphaned certificates (legacy data)
+        filtered = filtered.filter(c => c.userId === currentUser.id || !c.userId);
+      }
+    } else if (statsConfig.targetUserId !== 'all') {
+      filtered = filtered.filter(c => c.userId === statsConfig.targetUserId);
+    } 
+    // If 'all', do not filter by userId (Admin only)
+
+    // 2. Filter by Date Range (Issue Date)
+    if (statsConfig.startDate) {
+      filtered = filtered.filter(c => c.issueDate >= statsConfig.startDate);
+    }
+    if (statsConfig.endDate) {
+      filtered = filtered.filter(c => c.issueDate <= statsConfig.endDate);
+    }
+
+    // 3. Filter by Category
+    if (statsConfig.category !== 'all') {
+      filtered = filtered.filter(c => c.category === statsConfig.category);
+    }
+
+    if (filtered.length === 0) {
+      warning("没有符合条件的记录可导出");
+      return;
+    }
+
+    // Generate Excel Data
+    const data = filtered.map(c => {
+      const owner = allUsers.find(u => u.id === c.userId);
+      return {
+        "证书名称": c.name,
+        "颁发单位": c.issuer,
+        "级别": c.level,
+        "类别": c.category,
+        "取得日期": c.issueDate,
+        "学时": c.hours || 0,
+        "添加日期": formatDate(c.timestamp),
+        "所属用户": owner ? owner.name : (c.userId === currentUser?.id ? currentUser?.name : "未知用户")
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "证书统计");
+    
+    // Auto-width columns
+    const maxWidth = data.reduce((w, r) => Math.max(w, r["证书名称"].length), 10);
+    worksheet['!cols'] = [
+      { wch: maxWidth + 5 }, // Name
+      { wch: 20 }, // Issuer
+      { wch: 10 }, // Level
+      { wch: 10 }, // Category
+      { wch: 12 }, // Date
+      { wch: 8 },  // Hours
+      { wch: 12 }, // Add Date
+      { wch: 15 }  // User
+    ];
+
+    XLSX.writeFile(workbook, `证书统计导出_${new Date().toISOString().split('T')[0]}.xlsx`);
+    success(`成功导出 ${filtered.length} 条记录`);
+    setIsStatsModalOpen(false);
   };
 
   // ========== AI Import Functions ==========
@@ -580,12 +673,19 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
             <span className="material-symbols-outlined text-[20px]">add_task</span>
             <span className="text-sm font-bold">登记新成果</span>
           </button>
-          <button
+        <button
             onClick={() => setIsAIModalOpen(true)}
             className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-2.5 text-white shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition-all active:scale-95"
           >
             <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
             <span className="text-sm font-bold">AI 导入</span>
+          </button>
+          <button
+            onClick={() => setIsStatsModalOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-white shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-[20px]">table_chart</span>
+            <span className="text-sm font-bold">统计导出</span>
           </button>
         </div>
       </div>
@@ -721,6 +821,91 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       </div>
 
       {/* Bulk actions float bar */}
+
+
+      {/* Statistics Modal */}
+      {isStatsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-background-light/30">
+              <h3 className="text-lg font-bold text-text-main flex items-center gap-2">
+                <span className="material-symbols-outlined text-green-600">table_view</span>
+                证书统计导出
+              </h3>
+              <button onClick={() => setIsStatsModalOpen(false)} className="text-text-muted hover:text-text-main"><span className="material-symbols-outlined">close</span></button>
+            </div>
+            <div className="p-6 space-y-5">
+              
+              {/* User Scope Selection (Admin Only) */}
+              {currentUser?.roles.includes(UserRole.Admin) && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-text-main">统计范围 (用户)</label>
+                  <select 
+                    value={statsConfig.targetUserId} 
+                    onChange={(e) => setStatsConfig({...statsConfig, targetUserId: e.target.value})}
+                    className="w-full px-4 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500/20 outline-none"
+                  >
+                    <option value="me">仅统计我自己</option>
+                    <option value="all">所有用户</option>
+                    <hr />
+                    {allUsers.map(u => (
+                      <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Date Range */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-text-main">取得日期范围</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="date" 
+                    value={statsConfig.startDate} 
+                    onChange={(e) => setStatsConfig({...statsConfig, startDate: e.target.value})}
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-green-500 transition-colors" 
+                  />
+                  <span className="text-text-muted">-</span>
+                  <input 
+                    type="date" 
+                    value={statsConfig.endDate} 
+                    onChange={(e) => setStatsConfig({...statsConfig, endDate: e.target.value})}
+                    className="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:border-green-500 transition-colors" 
+                  />
+                </div>
+                <p className="text-[10px] text-text-muted">留空则不限制日期范围</p>
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-bold text-text-main">证书类别</label>
+                <select 
+                  value={statsConfig.category} 
+                  onChange={(e) => setStatsConfig({...statsConfig, category: e.target.value})}
+                  className="w-full px-4 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500/20 outline-none"
+                >
+                  <option value="all">所有类别</option>
+                  {Object.values(CertificateCategory).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            
+            </div>
+            <div className="p-6 pt-0 flex gap-3">
+              <button onClick={() => setIsStatsModalOpen(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-lg hover:bg-gray-200 transition-colors">取消</button>
+              <button 
+                onClick={handleExport}
+                className="flex-1 py-2.5 bg-green-600 text-white font-bold rounded-lg shadow-lg shadow-green-600/20 hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                生成 Excel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {selectedIds.size > 0 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[40] animate-in fade-in slide-in-from-bottom-8 duration-300">
           <div className="bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-6 border border-white/10">
