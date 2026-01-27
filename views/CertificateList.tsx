@@ -544,6 +544,14 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     return <span className="material-symbols-outlined text-[16px] text-[#8B5CF6]">{sortConfig.direction === 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}</span>;
   };
 
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   if (isLoading && certificates.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-text-muted gap-2">
@@ -657,6 +665,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               <th className="px-6 py-4 font-semibold text-text-muted cursor-pointer select-none" onClick={() => handleSort('level')}>级别 {getSortIcon('level')}</th>
               <th className="px-6 py-4 font-semibold text-text-muted cursor-pointer select-none" onClick={() => handleSort('hours')}>学时 {getSortIcon('hours')}</th>
               <th className="px-6 py-4 font-semibold text-text-muted cursor-pointer select-none" onClick={() => handleSort('issueDate')}>取得日期 {getSortIcon('issueDate')}</th>
+              <th className="px-6 py-4 font-semibold text-text-muted cursor-pointer select-none" onClick={() => handleSort('timestamp')}>添加日期 {getSortIcon('timestamp')}</th>
               <th className="px-6 py-4 font-semibold text-text-muted text-right">操作</th>
             </tr>
           </thead>
@@ -691,6 +700,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                   )}
                 </td>
                 <td className="px-6 py-4 text-text-muted font-mono">{cert.issueDate}</td>
+                <td className="px-6 py-4 text-text-muted font-mono">{formatDate(cert.timestamp || Date.now())}</td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button className="p-1.5 text-text-muted hover:text-[#8B5CF6] transition-colors" onClick={(e) => { e.stopPropagation(); onCertSelect(cert.id); }} title="查看详情"><span className="material-symbols-outlined text-[20px]">visibility</span></button>

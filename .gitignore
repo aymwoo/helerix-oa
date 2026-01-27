@@ -37,3 +37,4 @@ data/
 .next/
 out/
 next-env.d.ts
+public/uploads/
