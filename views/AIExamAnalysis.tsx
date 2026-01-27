@@ -351,7 +351,7 @@ const AIExamAnalysis: React.FC = () => {
             <div className="absolute bottom-4 right-4 flex gap-2">
               <button
                 onClick={saveNewPromptVersion}
-                className="px-4 py-2 bg-primary text-white rounded-lg text-[10px] font-semibold hover:bg-violet-700 shadow-lg shadow-primary/20 transition-all flex items-center gap-1.5 active:scale-95"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-[10px] font-semibold hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all flex items-center gap-1.5 active:scale-95"
               >
                 <span className="material-symbols-outlined text-[16px]">save</span>
                 另存为新版本
