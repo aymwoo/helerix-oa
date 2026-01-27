@@ -98,6 +98,33 @@ export const UserDatabase = {
     });
     if (!res.ok) throw new Error("Failed to update last login");
   },
+
+  sendHeartbeat: async (): Promise<void> => {
+    const res = await fetch(`${API_BASE}/users/heartbeat`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to send heartbeat");
+  },
+
+  logout: async (): Promise<void> => {
+    const res = await fetch(`${API_BASE}/users/logout`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to logout");
+  },
+
+  getOnlineStatus: async (): Promise<{
+    onlineCount: number;
+    onlineUsers: { id: string; name: string; avatarUrl: string }[];
+  }> => {
+    const res = await fetch(`${API_BASE}/users/heartbeat`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error("Failed to get online status");
+    return res.json();
+  },
 };
 
 // ============ CERTIFICATES ============

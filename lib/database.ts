@@ -126,6 +126,9 @@ if (!usersTableInfo.some((col) => col.name === "password")) {
 if (!usersTableInfo.some((col) => col.name === "lastLogin")) {
   db.exec("ALTER TABLE users ADD COLUMN lastLogin INTEGER");
 }
+if (!usersTableInfo.some((col) => col.name === "lastHeartbeat")) {
+  db.exec("ALTER TABLE users ADD COLUMN lastHeartbeat INTEGER");
+}
 
 const certsTableInfo = db
   .prepare("PRAGMA table_info(certificates)")

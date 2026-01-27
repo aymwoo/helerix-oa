@@ -55,6 +55,18 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
       }
     };
     initData();
+
+    // Set up periodic refresh to update online status (every 30 seconds)
+    const refreshInterval = setInterval(async () => {
+      try {
+        const loadedUsers = await UserDatabase.getAll();
+        setUsers(loadedUsers);
+      } catch (error) {
+        console.error("刷新教研员数据失败:", error);
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // 为不同学科分配颜色主题
@@ -491,7 +503,11 @@ const UserList: React.FC<UserListProps> = ({ onUserSelect, currentUser }) => {
                       <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold 
                          ${user.status === UserStatus.Active ? 'bg-green-50 text-green-700 border-green-100' :
                           user.status === UserStatus.Offline ? 'bg-gray-50 text-gray-600 border-gray-200' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}></span>
+                        <span className={`relative w-1.5 h-1.5 rounded-full ${user.status === UserStatus.Active ? 'bg-green-500' : user.status === UserStatus.Offline ? 'bg-gray-400' : 'bg-red-500'}`}>
+                          {user.status === UserStatus.Active && (
+                            <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75"></span>
+                          )}
+                        </span>
                         {user.status}
                       </div>
                     </td>

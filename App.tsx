@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import UserList from './views/UserList';
 import UserProfile from './views/UserProfile';
@@ -19,6 +19,7 @@ import { useToast } from './components/ToastContext';
 import MobileNav from './components/MobileNav';
 
 const AUTH_STORAGE_KEY = 'helerix_auth_user_id';
+const HEARTBEAT_INTERVAL = 30000; // 30 seconds
 
 const App: React.FC = () => {
   const { error } = useToast();
@@ -28,6 +29,31 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Start heartbeat to maintain online status
+  const startHeartbeat = useCallback(() => {
+    // Clear any existing interval
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+    }
+
+    // Send initial heartbeat immediately
+    UserDatabase.sendHeartbeat().catch(console.error);
+
+    // Set up interval for subsequent heartbeats
+    heartbeatIntervalRef.current = setInterval(() => {
+      UserDatabase.sendHeartbeat().catch(console.error);
+    }, HEARTBEAT_INTERVAL);
+  }, []);
+
+  // Stop heartbeat
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -41,6 +67,8 @@ const App: React.FC = () => {
           if (user) {
             setCurrentUser(user);
             setIsAuthenticated(true);
+            // Start heartbeat for existing session
+            startHeartbeat();
           } else {
             // Stored user no longer exists, clear storage
             localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -53,15 +81,54 @@ const App: React.FC = () => {
       }
     };
     checkAuth();
-  }, []);
+  }, [startHeartbeat]);
+
+  // Handle page visibility and unload
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated) {
+        // Resume heartbeat when page becomes visible
+        startHeartbeat();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      // Send logout request synchronously before page unloads
+      if (isAuthenticated) {
+        const userId = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (userId) {
+          // Use navigator.sendBeacon for reliable delivery on page unload
+          navigator.sendBeacon('/api/users/logout', JSON.stringify({ userId }));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      stopHeartbeat();
+    };
+  }, [isAuthenticated, startHeartbeat, stopHeartbeat]);
 
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setIsAuthenticated(true);
     localStorage.setItem(AUTH_STORAGE_KEY, user.id);
+    // Start heartbeat when user logs in
+    startHeartbeat();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Stop heartbeat and notify server of logout
+    stopHeartbeat();
+    try {
+      await UserDatabase.logout();
+    } catch (e) {
+      console.error('Failed to logout on server:', e);
+    }
     setCurrentUser(null);
     setIsAuthenticated(false);
     setCurrentView('schedule');

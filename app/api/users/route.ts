@@ -1,14 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/database";
+import { UserStatus } from "@/types";
+
+// Heartbeat timeout in milliseconds (60 seconds)
+const HEARTBEAT_TIMEOUT = 60000;
 
 export async function GET() {
   try {
     const users = db.prepare("SELECT * FROM users").all();
-    const parsed = users.map((u: any) => ({
-      ...u,
-      roles: JSON.parse(u.roles || "[]"),
-      expertise: JSON.parse(u.expertise || "[]"),
-    }));
+    const now = Date.now();
+
+    const parsed = users.map((u: any) => {
+      // Calculate real-time status based on heartbeat
+      let computedStatus = u.status;
+
+      // If user has a lastHeartbeat, determine if they're online
+      if (u.lastHeartbeat) {
+        const timeSinceLastHeartbeat = now - u.lastHeartbeat;
+        if (timeSinceLastHeartbeat < HEARTBEAT_TIMEOUT) {
+          computedStatus = UserStatus.Active;
+        } else if (u.status === UserStatus.Active) {
+          // Heartbeat expired, mark as offline
+          computedStatus = UserStatus.Offline;
+          // Update the database
+          db.prepare("UPDATE users SET status = ? WHERE id = ?").run(
+            UserStatus.Offline,
+            u.id,
+          );
+        }
+      }
+
+      return {
+        ...u,
+        roles: JSON.parse(u.roles || "[]"),
+        expertise: JSON.parse(u.expertise || "[]"),
+        status: computedStatus,
+      };
+    });
     return NextResponse.json(parsed);
   } catch (err) {
     console.error(err);

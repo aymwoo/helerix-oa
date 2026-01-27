@@ -34,6 +34,7 @@ export interface User {
   joinDate?: string;
   expertise?: string[];
   lastLogin?: number;
+  lastHeartbeat?: number;
 }
 
 export interface Project {
