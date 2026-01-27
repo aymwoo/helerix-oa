@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider, User, UserRole } from '../types';
 import { CertificateDatabase, PromptDatabase, FileManager, AIProviderDatabase, UserDatabase } from '../db';
 import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { useToast } from '../components/ToastContext';
 
 interface CertificateListProps {
@@ -286,7 +288,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
 
 
 
-  const handleExport = () => {
+  const handleExport = async () => {
     let filtered = certificates;
 
     // 1. Filter by User
@@ -318,6 +320,11 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       return;
     }
 
+    setIsLoading(true); // Show loading state
+    const zip = new JSZip();
+    const folderName = `证书统计导出_${new Date().toISOString().split('T')[0]}`;
+    const imgFolder = zip.folder(folderName + "/images"); // Create a subfolder for images
+
     // Generate Excel Data
     const data = filtered.map(c => {
       const owner = allUsers.find(u => u.id === c.userId);
@@ -329,10 +336,75 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         "取得日期": c.issueDate,
         "学时": c.hours || 0,
         "添加日期": formatDate(c.timestamp),
-        "所属用户": owner ? owner.name : (c.userId === currentUser?.id ? currentUser?.name : "未知用户")
+        "所属用户": owner ? owner.name : (c.userId === currentUser?.id ? currentUser?.name : "未知用户"),
+        "图片文件名": "" // Placeholder, to be filled later or just for structure
       };
     });
 
+    const usedFilenames = new Set<string>();
+
+    // Process Images and Add to Zip
+    await Promise.all(filtered.map(async (c, index) => {
+      if (!c.credentialUrl) return;
+
+      try {
+        let blob: Blob | null = null;
+        let extension = "jpg"; // Default extension
+
+        if (c.credentialUrl.startsWith("file://")) {
+            const fileData = await FileManager.getFile(c.credentialUrl);
+            if (fileData) {
+                const byteCharacters = atob(fileData.data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                blob = new Blob([byteArray], { type: fileData.mimeType });
+                
+                // Try to guess extension from mimeType
+                if (fileData.mimeType === 'application/pdf') extension = 'pdf';
+                else if (fileData.mimeType === 'image/png') extension = 'png';
+                else if (fileData.mimeType === 'image/jpeg') extension = 'jpg';
+            }
+        } else {
+             // For uploads served by nginx or external URLs
+             const res = await fetch(c.credentialUrl);
+             if (res.ok) {
+                 blob = await res.blob();
+                 const mimeType = blob.type;
+                 if (mimeType === 'application/pdf') extension = 'pdf';
+                 else if (mimeType === 'image/png') extension = 'png';
+                 else if (mimeType === 'image/jpeg') extension = 'jpg';
+             }
+        }
+
+        if (blob && imgFolder) {
+            // Format filename: YYYYMMDD_Name.ext
+            // Clean filename to remove invalid characters
+            const safeName = c.name.replace(/[\\/:*?"<>|]/g, "_");
+            const dateStr = c.issueDate.replace(/-/g, "");
+            let filename = `${dateStr}_${safeName}.${extension}`;
+            
+            // Handle duplicate filenames
+            let counter = 1;
+            while (usedFilenames.has(filename)) {
+                filename = `${dateStr}_${safeName}_${counter}.${extension}`;
+                counter++;
+            }
+            usedFilenames.add(filename);
+
+            imgFolder.file(filename, blob);
+            
+            // Update Excel data with the actual filename used
+            data[index]["图片文件名"] = filename;
+        }
+      } catch (err) {
+          console.error(`Failed to process image for certificate ${c.name}`, err);
+      }
+    }));
+
+    // Create Excel File
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "证书统计");
@@ -347,12 +419,26 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
       { wch: 12 }, // Date
       { wch: 8 },  // Hours
       { wch: 12 }, // Add Date
-      { wch: 15 }  // User
+      { wch: 15 }, // User
+      { wch: 30 }  // Image Filename
     ];
 
-    XLSX.writeFile(workbook, `证书统计导出_${new Date().toISOString().split('T')[0]}.xlsx`);
-    success(`成功导出 ${filtered.length} 条记录`);
-    setIsStatsModalOpen(false);
+    // Generate Excel Buffer
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    zip.file(`${folderName}/证书统计表.xlsx`, excelBuffer);
+
+    // Generate and Download Zip
+    try {
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `${folderName}.zip`);
+        success(`成功导出 ${filtered.length} 条记录及相应附件`);
+    } catch (err) {
+        console.error("Failed to generate zip", err);
+        error("导出压缩包失败");
+    } finally {
+        setIsLoading(false);
+        setIsStatsModalOpen(false);
+    }
   };
 
   // ========== AI Import Functions ==========
