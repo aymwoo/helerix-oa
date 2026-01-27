@@ -825,7 +825,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
         </div>
         <div className="flex gap-2">
           <span className="text-xs font-bold text-text-muted px-2 py-1">筛选级别:</span>
-          {Object.values(HonorLevel).slice(0, 3).map(level => (
+          {Object.values(HonorLevel).map(level => (
             <button key={level} onClick={() => setSearchTerm(level)} className="px-3 py-1 text-[10px] font-bold border rounded-md hover:bg-white transition-colors">{level}</button>
           ))}
         </div>
