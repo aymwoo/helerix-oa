@@ -3,9 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 import { Certificate, HonorLevel, CertificateCategory, PromptTemplate, CustomProvider, User, UserRole } from '../types';
 import { CertificateDatabase, PromptDatabase, FileManager, AIProviderDatabase, UserDatabase } from '../db';
-import * as XLSX from 'xlsx';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+
 import { useToast } from '../components/ToastContext';
 
 interface CertificateListProps {
@@ -71,12 +69,46 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        await CertificateDatabase.initialize();
-        const data = await CertificateDatabase.getAll();
-        setCertificates(data);
+        const loadCerts = async () => {
+          await CertificateDatabase.initialize();
+          return await CertificateDatabase.getAll();
+        };
 
-        await PromptDatabase.initialize();
-        const pms = await PromptDatabase.getAll("certificate");
+        const loadPrompts = async () => {
+          await PromptDatabase.initialize();
+          return await PromptDatabase.getAll("certificate");
+        };
+
+        const loadProviders = async () => {
+          try {
+            return await AIProviderDatabase.getAll();
+          } catch (e) {
+            console.error("Failed to load providers", e);
+            return [];
+          }
+        };
+
+        const loadUser = async () => {
+          const userId = localStorage.getItem("helerix_auth_user_id");
+          if (!userId) return { currentUser: null, allUsers: [] };
+          
+          const user = await UserDatabase.getById(userId);
+          let allUsersList: User[] = [];
+          if (user && user.roles.includes(UserRole.Admin)) {
+            allUsersList = await UserDatabase.getAll();
+          }
+          return { currentUser: user, allUsers: allUsersList };
+        };
+
+        const [certs, pms, providers, userData] = await Promise.all([
+          loadCerts(),
+          loadPrompts(),
+          loadProviders(),
+          loadUser()
+        ]);
+
+        setCertificates(certs);
+
         setPrompts(pms);
         const def = pms.find(p => p.isDefault) || pms[0];
         if (def) {
@@ -84,26 +116,12 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
           setEditingPrompt(def.content);
         }
 
-        // Load custom AI providers
-        try {
-          const providers = await AIProviderDatabase.getAll();
-          setCustomProviders(providers);
-          if (providers.length > 0) setSelectedProviderId(providers[0].id);
-        } catch (e) {
-          console.error("Failed to load providers", e);
-        }
+        setCustomProviders(providers);
+        if (providers.length > 0) setSelectedProviderId(providers[0].id);
 
+        setCurrentUser(userData.currentUser);
+        setAllUsers(userData.allUsers);
 
-        // Load User Info
-        const userId = localStorage.getItem("helerix_auth_user_id");
-        if (userId) {
-          const user = await UserDatabase.getById(userId);
-          setCurrentUser(user);
-          if (user && user.roles.includes(UserRole.Admin)) {
-            const users = await UserDatabase.getAll();
-            setAllUsers(users);
-          }
-        }
       } catch (error) {
         console.error("加载证书失败", error);
       } finally {
@@ -295,6 +313,12 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
     }
 
     setIsLoading(true);
+    
+    // Dynamic import to reduce initial bundle size
+    const XLSX = await import('xlsx');
+    const JSZip = (await import('jszip')).default;
+    const { saveAs } = await import('file-saver');
+
     const zip = new JSZip();
     const dateStr = new Date().toISOString().split('T')[0];
     const folderName = `${filenamePrefix}_${dateStr}`;
