@@ -30,7 +30,7 @@ vi.mock('../components/Sidebar', () => ({
     default: ({ currentView, onNavigate, currentUser, onLogout }: any) => (
         <div data-testid="sidebar">
             <span data-testid="current-view">{currentView}</span>
-            <span data-testid="current-user">{currentUser?.name}</span>
+            <span data-testid="current-user">{currentUser.name}</span>
             <button onClick={() => onNavigate('schedule')}>Schedule</button>
             <button onClick={() => onNavigate('users')}>Users</button>
             <button onClick={() => onNavigate('system-settings')}>Settings</button>
@@ -44,7 +44,9 @@ vi.mock('../db', () => ({
     UserDatabase: {
         initialize: vi.fn(() => Promise.resolve()),
         getById: vi.fn(),
-        getAll: vi.fn(() => Promise.resolve([]))
+        getAll: vi.fn(() => Promise.resolve([])),
+        sendHeartbeat: vi.fn(() => Promise.resolve()),
+        logout: vi.fn(() => Promise.resolve())
     }
 }))
 
@@ -75,6 +77,7 @@ describe('App Component', () => {
         vi.clearAllMocks()
         localStorage.clear()
         vi.mocked(UserDatabase.getById).mockResolvedValue(null)
+        vi.mocked(localStorage.getItem).mockReturnValue(null)
     })
 
     it('should show login page when not authenticated', async () => {
@@ -107,7 +110,9 @@ describe('App Component', () => {
             fireEvent.click(screen.getByText('Login as Admin'))
         })
         
-        expect(localStorage.setItem).toHaveBeenCalledWith('helerix_auth_user_id', 'admin-1')
+        await waitFor(() => {
+            expect(localStorage.setItem).toHaveBeenCalledWith('helerix_auth_user_id', 'admin-1')
+        })
     })
 
     it('should restore session from localStorage', async () => {
