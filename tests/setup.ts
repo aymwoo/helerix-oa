@@ -71,6 +71,7 @@ Object.defineProperty(navigator, "clipboard", {
     writeText: vi.fn(() => Promise.resolve()),
   },
   writable: true,
+  configurable: true,
 });
 
 // Mock confirm and alert

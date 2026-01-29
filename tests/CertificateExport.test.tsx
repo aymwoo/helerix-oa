@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import CertificateList from '../views/CertificateList'
 import { UserRole, HonorLevel, CertificateCategory, UserStatus } from '../types'
@@ -123,22 +124,24 @@ describe('CertificateExport', () => {
   })
 
   it('should open stats modal when clicking export button', async () => {
+    const user = userEvent.setup()
     render(<ToastProvider><CertificateList onCertSelect={() => {}} /></ToastProvider>)
     await waitFor(() => screen.getByText('统计导出'))
     
-    fireEvent.click(screen.getByText('统计导出'))
+    await user.click(screen.getByText('统计导出'))
     expect(screen.getByText('证书统计导出')).toBeInTheDocument()
   })
 
   it('should trigger export and call JSZip and saveAs', async () => {
+    const user = userEvent.setup()
     render(<ToastProvider><CertificateList onCertSelect={() => {}} /></ToastProvider>)
     await waitFor(() => screen.getByText('统计导出'))
     
     // Open modal
-    fireEvent.click(screen.getByText('统计导出'))
+    await user.click(screen.getByText('统计导出'))
     
     // Click Generate Excel
-    fireEvent.click(screen.getByText('生成 Excel'))
+    await user.click(screen.getByText('生成 Excel'))
     
     await waitFor(() => {
       // Check if JSZip was instantiated
@@ -155,61 +158,51 @@ describe('CertificateExport', () => {
   })
 
   it('should filter certificates by date', async () => {
+    const user = userEvent.setup()
     render(<ToastProvider><CertificateList onCertSelect={() => {}} /></ToastProvider>)
     await waitFor(() => screen.getByText('统计导出'))
     
     // Open modal
-    fireEvent.click(screen.getByText('统计导出'))
+    await user.click(screen.getByText('统计导出'))
     
-    // Set date range to include only the second certificate
-    const inputs = screen.getAllByRole('textbox') // Using role might need adjustment based on input type
-    // Since inputs are type='date', they might not be found by role 'textbox' easily without checking
-    // Let's rely on finding by label or class if IDs aren't present?
-    // In the code: <input type="date" value={statsConfig.startDate} ... />
-    // They don't have labels associated via htmlFor/id.
-    // However, they are next to "取得日期范围" text
-    
-    // Let's simulate setting dates directly in the state via UI interaction
-    // Since we don't have easy selectors, we can try to find by input type if possible or class
-    // But testing-library encourages labels.
-    
-    // Quick fix: find inputs by display value or nearby text if possible.
-    // The inputs are rendered as:
-    // <input type="date" value={statsConfig.startDate} ... />
-    // We can select them by container logic or placeholder if present (no placeholder).
-    // Let's assume we can interact with them.
-    
-    // Actually, in the modal code:
-    // <label className="text-sm font-bold text-text-main">取得日期范围</label>
-    // <input ... type="date" />
-    
-    // We can try to use `container` query or test IDs. Since I can't modify the source right now to add TestIDs easily without "editing file", I will assume standard querying works or I might have to add TestIDs in a separate step if this fails.
-    
-    // Wait, testing "filtering logic" via UI integration test is hard if UI is hard to select.
-    // But let's try to proceed by verifying the Export function gets called with filtered data.
-    // Since I can't easily spy on internal `performExport` without refactoring, I have verify via side effects (e.g. what's passed to XLSX).
-    
-    // Implementation detail: mock XLSX data processing
-    // When json_to_sheet is called, it receives `data`. I can check that `data` has length 1.
-    
-    // Let's skip detailed UI interaction for date inputs if it's too brittle without TestIDs, and focus on fundamental export flow which is "click generate -> get zip".
-    // I can stick to the "User Scope" or "Category" if they are easier to select (Select elements are easier).
+    // Set date range to include only the second certificate (2023-06-01)
+    // Range: 2023-05-01 to 2023-07-01
+    const startDateInput = screen.getByTestId('stats-start-date')
+    const endDateInput = screen.getByTestId('stats-end-date')
+
+    // userEvent for date inputs usually requires valid date string YYYY-MM-DD
+    await user.type(startDateInput, '2023-05-01')
+    await user.type(endDateInput, '2023-07-01')
+
+    // Click Export
+    await user.click(screen.getByText('生成 Excel'))
+
+    await waitFor(() => {
+        expect(XLSX.utils.json_to_sheet).toHaveBeenCalled()
+    })
+
+    // Verify filter logic via mock calls
+    // json_to_sheet is called with the data array. We can inspect the first argument.
+    const exportData = vi.mocked(XLSX.utils.json_to_sheet).mock.calls[0][0]
+    expect(exportData).toHaveLength(1)
+    expect(exportData[0]['证书名称']).toBe('Test Certificate 2')
   })
   
   it('should batch export selected certificates', async () => {
+    const user = userEvent.setup()
     render(<ToastProvider><CertificateList onCertSelect={() => {}} /></ToastProvider>)
     await waitFor(() => screen.getByText('Test Certificate 1'))
     
     // Find checkboxes
     const checkboxes = screen.getAllByRole('checkbox')
     // Click the first certificate's checkbox (index 1, as 0 is select all)
-    fireEvent.click(checkboxes[1])
+    await user.click(checkboxes[1])
     
     // Check if batch action bar appears
     await waitFor(() => expect(screen.getByText('批量导出')).toBeInTheDocument())
     
     // Click batch export
-    fireEvent.click(screen.getByText('批量导出'))
+    await user.click(screen.getByText('批量导出'))
     
     await waitFor(() => {
       // Should trigger export

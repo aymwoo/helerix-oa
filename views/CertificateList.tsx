@@ -980,6 +980,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                 <label className="text-sm font-bold text-text-main">取得日期范围</label>
                 <div className="flex items-center gap-2">
                   <input 
+                    data-testid="stats-start-date"
                     type="date" 
                     value={statsConfig.startDate} 
                     onChange={(e) => setStatsConfig({...statsConfig, startDate: e.target.value})}
@@ -987,6 +988,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
                   />
                   <span className="text-text-muted">-</span>
                   <input 
+                    data-testid="stats-end-date"
                     type="date" 
                     value={statsConfig.endDate} 
                     onChange={(e) => setStatsConfig({...statsConfig, endDate: e.target.value})}
@@ -1000,6 +1002,7 @@ const CertificateList: React.FC<CertificateListProps> = ({ onCertSelect }) => {
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-text-main">证书类别</label>
                 <select 
+                  data-testid="stats-category-select"
                   value={statsConfig.category} 
                   onChange={(e) => setStatsConfig({...statsConfig, category: e.target.value})}
                   className="w-full px-4 py-2.5 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500/20 outline-none"
