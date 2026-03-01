@@ -79,7 +79,9 @@ export async function getFeishuEvents(
     }
 
     if (data.data.items) {
-      allEvents = allEvents.concat(data.data.items);
+      // Filter out events that are deleted/cancelled
+      const activeEvents = data.data.items.filter((item: any) => item.status !== 'cancelled');
+      allEvents = allEvents.concat(activeEvents);
     }
     pageToken = data.data.page_token;
   } while (pageToken);
