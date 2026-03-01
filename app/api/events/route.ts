@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/database";
+import { getFeishuEvents, createFeishuEvent } from "@/lib/feishu";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const events = db.prepare("SELECT * FROM events").all();
-    const parsed = events.map((e: any) => ({
-      ...e,
-      participants: JSON.parse(e.participants || "[]"),
-    }));
-    return NextResponse.json(parsed);
-  } catch (err) {
-    console.error(err);
+    const url = new URL(request.url);
+    const startDate = url.searchParams.get("startDate") || undefined;
+    const endDate = url.searchParams.get("endDate") || undefined;
+
+    const events = await getFeishuEvents(startDate, endDate);
+    return NextResponse.json(events);
+  } catch (err: any) {
+    console.error("Feishu API Error (GET):", err.message);
     return NextResponse.json(
-      { error: "Failed to fetch events" },
+      { error: "Failed to fetch events", details: err.message },
       { status: 500 },
     );
   }
@@ -21,26 +21,16 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const event = await request.json();
-    db.prepare(
-      `
-      INSERT INTO events (id, title, date, startTime, endTime, type, description, participants)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    ).run(
-      event.id,
-      event.title,
-      event.date,
-      event.startTime,
-      event.endTime,
-      event.type,
-      event.description || "",
-      JSON.stringify(event.participants || []),
-    );
-    return NextResponse.json(event);
-  } catch (err) {
-    console.error(err);
+    const createdEvent = await createFeishuEvent(event);
+    
+    // For convenience in UI, we can just return the event struct it expected,
+    // although technically Feishu provides a new ID. The frontend handles it.
+    // It's better to return success since the frontend might rely on the returned structure or just refetch.
+    return NextResponse.json({ success: true, event: createdEvent });
+  } catch (err: any) {
+    console.error("Feishu API Error (POST):", err.message);
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to create event", details: err.message },
       { status: 500 },
     );
   }

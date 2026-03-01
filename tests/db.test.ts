@@ -252,9 +252,9 @@ describe("API Client - EventsDatabase", () => {
   it("should fetch all events", async () => {
     mockFetch(mockEvents);
 
-    const events = await EventsDatabase.getAll();
+    const events = await EventsDatabase.getAll({ startDate: '2024-01-01', endDate: '2024-01-31' });
 
-    expect(global.fetch).toHaveBeenCalledWith("/api/events");
+    expect(global.fetch).toHaveBeenCalledWith("/api/events?startDate=2024-01-01&endDate=2024-01-31");
     expect(events).toEqual(mockEvents);
   });
 

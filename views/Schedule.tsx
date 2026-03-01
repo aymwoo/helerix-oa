@@ -60,7 +60,12 @@ const Schedule: React.FC = () => {
       setIsLoading(true);
       try {
         await EventsDatabase.initialize();
-        const eventData = await EventsDatabase.getAll();
+        
+        // Calculate the first and last day of the current view (including padding)
+        const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
+        const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+        
+        const eventData = await EventsDatabase.getAll({ startDate, endDate });
         setEvents(eventData);
 
         await EventTypeDatabase.initialize();
@@ -78,7 +83,7 @@ const Schedule: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [currentDate.getFullYear(), currentDate.getMonth()]);
 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -236,7 +241,9 @@ const Schedule: React.FC = () => {
     }
     
     // Refresh
-    const updated = await EventsDatabase.getAll();
+    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
+    const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+    const updated = await EventsDatabase.getAll({ startDate, endDate });
     setEvents(updated);
     
     setIsAddModalOpen(false);
@@ -248,7 +255,10 @@ const Schedule: React.FC = () => {
 
   const handleDeleteEvent = async (id: string) => {
       if(confirm("确定删除此日程吗？")) {
-          const updated = await EventsDatabase.delete(id);
+          await EventsDatabase.delete(id);
+          const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
+          const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+          const updated = await EventsDatabase.getAll({ startDate, endDate });
           setEvents(updated);
           success("日程已删除");
       }

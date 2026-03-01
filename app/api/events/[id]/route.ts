@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "@/lib/database";
+import { deleteFeishuEvent } from "@/lib/feishu";
 
 export async function DELETE(
   request: NextRequest,
@@ -7,12 +7,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    db.prepare("DELETE FROM events WHERE id = ?").run(id);
+    await deleteFeishuEvent(id);
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error("Feishu API Error (DELETE):", err.message);
     return NextResponse.json(
-      { error: "Failed to delete event" },
+      { error: "Failed to delete event", details: err.message },
       { status: 500 },
     );
   }

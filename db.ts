@@ -283,8 +283,13 @@ export const PromptDatabase = {
 export const EventsDatabase = {
   initialize: async (): Promise<void> => {},
 
-  getAll: async (): Promise<ScheduleEvent[]> => {
-    const res = await fetch(`${API_BASE}/events`);
+  getAll: async (params?: { startDate: string, endDate: string }): Promise<ScheduleEvent[]> => {
+    let url = `${API_BASE}/events`;
+    if (params) {
+      const q = new URLSearchParams(params);
+      url += `?${q.toString()}`;
+    }
+    const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch events");
     return res.json();
   },
