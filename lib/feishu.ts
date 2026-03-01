@@ -92,10 +92,8 @@ export async function createFeishuEvent(event: ScheduleEvent): Promise<any> {
 
   // Parse date and time in China timezone (+08:00 for simplicity)
   // For standard scheduling, assume local time
-  const startDateTime = new Date(`
-${event.date}T${event.startTime}:00+08:00`);
-  const endDateTime = new Date(`
-${event.date}T${event.endTime}:00+08:00`);
+  const startDateTime = new Date(`${event.date}T${event.startTime}:00+08:00`);
+  const endDateTime = new Date(`${event.date}T${event.endTime}:00+08:00`);
 
   const body = {
     summary: event.title,
@@ -172,9 +170,20 @@ function mapFeishuEventToScheduleEvent(feishuEvent: any): ScheduleEvent {
   // Clean description
   description = description.replace(/类型:.*\n/, "").replace(/参与人:.*/, "").trim();
 
-  // Convert start_time timestamp back to local strings
-  const startTimeMs = parseInt(feishuEvent.start_time.timestamp) * 1000;
-  const endTimeMs = parseInt(feishuEvent.end_time.timestamp) * 1000;
+  // Extract start and end times, handling both timestamp (for specific times) and date (for all-day events) formats
+  let startTimeMs = 0;
+  if (feishuEvent.start_time.timestamp) {
+    startTimeMs = parseInt(feishuEvent.start_time.timestamp) * 1000;
+  } else if (feishuEvent.start_time.date) {
+    startTimeMs = new Date(`${feishuEvent.start_time.date}T00:00:00+08:00`).getTime();
+  }
+
+  let endTimeMs = 0;
+  if (feishuEvent.end_time.timestamp) {
+    endTimeMs = parseInt(feishuEvent.end_time.timestamp) * 1000;
+  } else if (feishuEvent.end_time.date) {
+    endTimeMs = new Date(`${feishuEvent.end_time.date}T23:59:59+08:00`).getTime();
+  }
 
   // Use a fixed timezone (Asia/Shanghai) formatting
   const formatter = new Intl.DateTimeFormat('en-CA', {

@@ -36,6 +36,12 @@ echo "  Edit files to see changes instantly."
 echo "════════════════════════════════════════════"
 echo ""
 
+# Remove stale Next.js dev lock file if it exists to prevent startup issues
+if [ -f ".next/dev/lock" ]; then
+    echo "🧹 Removing stale Next.js lock file..."
+    rm -f .next/dev/lock
+fi
+
 # Start Next.js in development mode
 # Using exec to replace the shell process with the next process
 exec npm run dev
