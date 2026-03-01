@@ -586,8 +586,14 @@ const Schedule: React.FC = () => {
 
       {/* Add Event Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setIsAddModalOpen(false)}
+        >
+            <div 
+                className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex justify-between items-center mb-6 border-b border-border-light pb-4 shrink-0">
                     <div>
                         <h3 className="text-xl font-bold text-text-main">{isBatchMode ? `批量新增日程 (${selectedDates.size}天)` : '新增教研日程'}</h3>
@@ -717,8 +723,14 @@ const Schedule: React.FC = () => {
 
       {/* View Day Details Modal */}
       {viewingDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-lg rounded-xl shadow-xl p-0 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            onClick={() => setViewingDate(null)}
+        >
+            <div 
+                className="bg-white w-full max-w-lg rounded-xl shadow-xl p-0 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="bg-primary p-6 text-white relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                     <div className="relative z-10 flex justify-between items-start">
