@@ -18,6 +18,13 @@ const COLORS_POOL = [
 
 import { useToast } from '../components/ToastContext';
 
+const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const Schedule: React.FC = () => {
   const { toast, success, error, info } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -62,8 +69,8 @@ const Schedule: React.FC = () => {
         await EventsDatabase.initialize();
         
         // Calculate the first and last day of the current view (including padding)
-        const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
-        const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+        const startDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20));
+        const endDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10));
         
         const eventData = await EventsDatabase.getAll({ startDate, endDate });
         setEvents(eventData);
@@ -92,7 +99,7 @@ const Schedule: React.FC = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString(new Date());
 
   const daysArray = useMemo(() => {
     const days = [];
@@ -109,7 +116,7 @@ const Schedule: React.FC = () => {
     // Add Actual Days
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = getLocalDateString(date);
       const dayOfWeek = date.getDay(); // 0-6
       
       const dayEvents = events.filter(e => e.date === dateStr);
@@ -164,7 +171,7 @@ const Schedule: React.FC = () => {
           const newSet = new Set(selectedDates);
           // Loop through range
           for (let d = new Date(low); d <= high; d.setDate(d.getDate() + 1)) {
-               const dStr = d.toISOString().split('T')[0];
+               const dStr = getLocalDateString(d);
                // Only add if it belongs to current month view (simplification for this UI)
                if (d.getMonth() === month) {
                    newSet.add(dStr);
@@ -241,8 +248,8 @@ const Schedule: React.FC = () => {
     }
     
     // Refresh
-    const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
-    const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+    const startDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20));
+    const endDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10));
     const updated = await EventsDatabase.getAll({ startDate, endDate });
     setEvents(updated);
     
@@ -256,8 +263,8 @@ const Schedule: React.FC = () => {
   const handleDeleteEvent = async (id: string) => {
       if(confirm("确定删除此日程吗？")) {
           await EventsDatabase.delete(id);
-          const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20).toISOString().split('T')[0];
-          const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10).toISOString().split('T')[0];
+          const startDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 20));
+          const endDate = getLocalDateString(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 10));
           const updated = await EventsDatabase.getAll({ startDate, endDate });
           setEvents(updated);
           success("日程已删除");
