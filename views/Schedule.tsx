@@ -757,7 +757,7 @@ const Schedule: React.FC = () => {
                             <p className="text-sm font-medium">今日暂无安排</p>
                             <button 
                                 onClick={(e) => { setViewingDate(null); handleAddIconClick(e, viewingDate); }} 
-                                className="mt-6 px-8 py-3 bg-primary text-white rounded-2xl font-black text-sm shadow-xl shadow-primary/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
+                                className="mt-6 px-8 py-3 bg-violet-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-violet-500/30 hover:bg-violet-700 transition-all active:scale-95 flex items-center gap-2"
                             >
                                 <span className="material-symbols-outlined text-[18px]">add_circle</span>
                                 添加第一项日程
