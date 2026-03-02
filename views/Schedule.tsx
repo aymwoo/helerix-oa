@@ -485,7 +485,7 @@ const Schedule: React.FC = () => {
                                 className={`
                                     absolute top-2 right-2 p-1 rounded-full transition-all duration-200
                                     ${hasEvents 
-                                        ? 'opacity-0 group-hover:opacity-100 bg-primary/10 text-primary hover:bg-primary hover:text-white' 
+                                        ? 'opacity-0 group-hover:opacity-100 bg-[#8B5CF6]/20 text-[#8B5CF6] hover:bg-[#8B5CF6] hover:text-white' 
                                         : showAvailableOnly
                                             ? 'opacity-100 bg-green-200 text-green-700 hover:bg-green-600 hover:text-white'
                                             : 'opacity-0 group-hover:opacity-100 bg-green-200 text-green-700 hover:bg-green-600 hover:text-white'
@@ -810,7 +810,7 @@ const Schedule: React.FC = () => {
                      <div className="p-4 border-t border-border-light bg-background-light/30 shrink-0">
                          <button 
                             onClick={(e) => { setViewingDate(null); handleAddIconClick(e, viewingDate); }} 
-                            className="w-full py-3 bg-white border border-border-light rounded-xl font-bold text-sm text-primary hover:bg-primary/5 transition-all shadow-sm flex items-center justify-center gap-2"
+                             className="w-full py-3 bg-white border border-[#8B5CF6]/40 rounded-xl font-bold text-sm text-[#8B5CF6] hover:bg-[#8B5CF6]/5 transition-all shadow-sm flex items-center justify-center gap-2"
                          >
                              <span className="material-symbols-outlined">add</span>
                              追加新日程
