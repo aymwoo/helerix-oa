@@ -532,10 +532,8 @@ const Schedule: React.FC = () => {
                         {hasEvents ? (
                             <div className="space-y-1 overflow-y-auto no-scrollbar flex-1 mt-1">
                                 {item.events.map((ev: any) => (
-                                    <div key={ev.id} className={`text-[9px] px-1.5 py-1 rounded border truncate flex items-center gap-1.5 transition-colors ${getEventStyle(ev.type)}`}>
-                                        <span className="font-bold shrink-0">{ev.startTime}</span>
-                                        <span className="shrink-0 opacity-70 border-l border-current pl-1.5 text-[8px] font-bold">{ev.type}</span>
-                                        <span className="truncate">{ev.title}</span>
+                                    <div key={ev.id} className={`text-[9px] px-1.5 py-1 rounded border truncate font-bold transition-colors ${getEventStyle(ev.type)}`}>
+                                        {ev.title}
                                     </div>
                                 ))}
                             </div>
