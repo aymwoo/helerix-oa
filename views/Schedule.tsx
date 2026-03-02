@@ -736,7 +736,7 @@ const Schedule: React.FC = () => {
                 className="bg-white w-full max-w-lg rounded-xl shadow-xl p-0 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="bg-primary p-6 text-white relative overflow-hidden shrink-0">
+                <div className="bg-[#8B5CF6] p-6 text-white relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
                     <div className="relative z-10 flex justify-between items-start">
                         <div>
@@ -752,7 +752,7 @@ const Schedule: React.FC = () => {
                 
                 <div className="p-6 overflow-y-auto space-y-4">
                     {viewDayEvents.length === 0 ? (
-                        <div className="text-center py-12 text-text-muted flex flex-col items-center">
+                        <div className="text-center py-12 text-[#6B7280] flex flex-col items-center">
                             <span className="material-symbols-outlined text-4xl opacity-20 mb-3">event_busy</span>
                             <p className="text-sm font-medium">今日暂无安排</p>
                             <button 
@@ -765,14 +765,14 @@ const Schedule: React.FC = () => {
                         </div>
                     ) : (
                         viewDayEvents.sort((a,b) => a.startTime.localeCompare(b.startTime)).map(ev => (
-                            <div key={ev.id} className="group p-4 rounded-2xl border border-border-light hover:border-primary/30 hover:shadow-md transition-all bg-white relative">
+                            <div key={ev.id} className="group p-4 rounded-2xl border border-[#E5E7EB] hover:border-[#8B5CF6]/30 hover:shadow-md transition-all bg-white relative">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className={`px-2 py-0.5 rounded text-[10px] font-bold border ${getEventStyle(ev.type)}`}>
                                         {ev.type}
                                     </div>
                                     <button 
                                         onClick={() => handleDeleteEvent(ev.id)}
-                                        className="text-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                        className="text-[#6B7280] hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
                                         title="删除日程"
                                     >
                                         <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -780,21 +780,21 @@ const Schedule: React.FC = () => {
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="flex flex-col items-center pt-1 min-w-[50px]">
-                                        <span className="text-sm font-black text-text-main">{ev.startTime}</span>
-                                        <div className="w-0.5 h-3 bg-border-light my-0.5"></div>
-                                        <span className="text-xs font-bold text-text-muted">{ev.endTime}</span>
+                                        <span className="text-sm font-black text-[#1F2937]">{ev.startTime}</span>
+                                        <div className="w-0.5 h-3 bg-[#E5E7EB] my-0.5"></div>
+                                        <span className="text-xs font-bold text-[#6B7280]">{ev.endTime}</span>
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-base font-bold text-text-main leading-tight mb-1">{ev.title}</h3>
-                                        {ev.description && <p className="text-xs text-text-muted mb-3 line-clamp-2">{ev.description}</p>}
+                                        <h3 className="text-base font-bold text-[#1F2937] leading-tight mb-1">{ev.title}</h3>
+                                        {ev.description && <p className="text-xs text-[#6B7280] mb-3 line-clamp-2">{ev.description}</p>}
                                         
                                         {/* Participants Display */}
                                         {ev.participants && ev.participants.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5 mt-2">
                                                 {ev.participants.map((p, idx) => (
-                                                    <div key={idx} className="flex items-center gap-1 bg-background-light px-2 py-0.5 rounded-full border border-border-light">
-                                                        <span className="material-symbols-outlined text-[12px] text-text-muted">person</span>
-                                                        <span className="text-[10px] font-bold text-text-main">{p}</span>
+                                                    <div key={idx} className="flex items-center gap-1 bg-[#F5F7FA] px-2 py-0.5 rounded-full border border-[#E5E7EB]">
+                                                        <span className="material-symbols-outlined text-[12px] text-[#6B7280]">person</span>
+                                                        <span className="text-[10px] font-bold text-[#1F2937]">{p}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -807,7 +807,7 @@ const Schedule: React.FC = () => {
                 </div>
 
                 {viewDayEvents.length > 0 && (
-                     <div className="p-4 border-t border-border-light bg-background-light/30 shrink-0">
+                     <div className="p-4 border-t border-[#E5E7EB] bg-[#F5F7FA]/30 shrink-0">
                          <button 
                             onClick={(e) => { setViewingDate(null); handleAddIconClick(e, viewingDate); }} 
                              className="w-full py-3 bg-white border border-[#8B5CF6]/40 rounded-xl font-bold text-sm text-[#8B5CF6] hover:bg-[#8B5CF6]/5 transition-all shadow-sm flex items-center justify-center gap-2"
