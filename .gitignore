@@ -38,3 +38,7 @@ data/
 out/
 next-env.d.ts
 public/uploads/
+
+# local env files
+.env
+.env.local

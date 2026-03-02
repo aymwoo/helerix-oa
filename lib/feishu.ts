@@ -1,9 +1,5 @@
 import { ScheduleEvent } from "../types";
 
-const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
-const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
-const FEISHU_CALENDAR_ID = process.env.FEISHU_CALENDAR_ID || "primary";
-
 let tenantAccessToken = "";
 let tokenExpire = 0;
 
@@ -11,6 +7,9 @@ async function getTenantAccessToken() {
   if (tenantAccessToken && Date.now() < tokenExpire) {
     return tenantAccessToken;
   }
+
+  const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
+  const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
 
   if (!FEISHU_APP_ID || !FEISHU_APP_SECRET) {
     throw new Error("Missing Feishu API credentials in environment variables");
@@ -45,6 +44,7 @@ export async function getFeishuEvents(
   endDate?: string
 ): Promise<ScheduleEvent[]> {
   const token = await getTenantAccessToken();
+  const FEISHU_CALENDAR_ID = process.env.FEISHU_CALENDAR_ID || "primary";
   
   // Default to fetching events for the current year if dates are not provided
   let start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1);
@@ -91,6 +91,7 @@ export async function getFeishuEvents(
 
 export async function createFeishuEvent(event: ScheduleEvent): Promise<any> {
   const token = await getTenantAccessToken();
+  const FEISHU_CALENDAR_ID = process.env.FEISHU_CALENDAR_ID || "primary";
 
   // Parse date and time in China timezone (+08:00 for simplicity)
   // For standard scheduling, assume local time
@@ -134,6 +135,7 @@ ${event.description || ""}
 
 export async function deleteFeishuEvent(eventId: string): Promise<void> {
   const token = await getTenantAccessToken();
+  const FEISHU_CALENDAR_ID = process.env.FEISHU_CALENDAR_ID || "primary";
 
   const res = await fetch(
     `https://open.feishu.cn/open-apis/calendar/v4/calendars/${FEISHU_CALENDAR_ID}/events/${eventId}`,

@@ -5,10 +5,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     container_name: helerix-app
     restart: always
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
     volumes:
       - ./data:/app/data
       - ./public/uploads:/app/public/uploads
