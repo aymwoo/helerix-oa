@@ -497,15 +497,15 @@ const Schedule: React.FC = () => {
                              </button>
                         </div>
 
-                        {/* Hover Preview Card - Only show on single select or hover, not during multi-select ops potentially */}
+                        {/* Hover Preview Card - Show full event list on hover */}
                         {hasEvents && !isSelected && (
                             <div className="absolute z-50 left-1/2 -translate-x-1/2 bottom-[105%] w-64 bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-border-light p-3 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none transform translate-y-2 group-hover:translate-y-0">
                                 <div className="flex items-center justify-between border-b border-border-light pb-2 mb-2">
                                     <span className="text-xs font-bold text-text-main">{dayItem.dateStr}</span>
                                     <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{item.events.length} 项日程</span>
                                 </div>
-                                <div className="space-y-2 max-h-[180px] overflow-hidden relative">
-                                    {item.events.slice(0, 5).map((ev: any) => (
+                                <div className="space-y-2 max-h-[240px] overflow-y-auto no-scrollbar relative">
+                                    {item.events.map((ev: any) => (
                                         <div key={ev.id} className="flex items-start gap-2">
                                             <div className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${getEventDotColor(ev.type)}`}></div>
                                             <div className="min-w-0 flex-1">
@@ -517,11 +517,6 @@ const Schedule: React.FC = () => {
                                             </div>
                                         </div>
                                     ))}
-                                    {item.events.length > 5 && (
-                                        <div className="text-[9px] text-center text-text-muted font-medium bg-background-light/50 rounded py-1">
-                                            还有 {item.events.length - 5} 项更多日程...
-                                        </div>
-                                    )}
                                 </div>
                                 {/* Triangle Arrow */}
                                 <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/95 filter drop-shadow-sm"></div>
@@ -530,12 +525,17 @@ const Schedule: React.FC = () => {
                         
                         {/* Event List Summary */}
                         {hasEvents ? (
-                            <div className="space-y-1 overflow-y-auto no-scrollbar flex-1 mt-1">
-                                {item.events.map((ev: any) => (
+                            <div className="space-y-1 flex-1 mt-1">
+                                {item.events.slice(0, 3).map((ev: any) => (
                                     <div key={ev.id} className={`text-[9px] px-1.5 py-1 rounded border truncate font-bold transition-colors ${getEventStyle(ev.type)}`}>
                                         {ev.title}
                                     </div>
                                 ))}
+                                {item.events.length > 3 && (
+                                    <div className="text-[9px] text-center text-text-muted/70 font-bold py-0.5 rounded bg-gray-50 hover:bg-gray-100 transition-colors cursor-default">
+                                        还有 {item.events.length - 3} 项...
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="flex-1 flex items-center justify-center">
